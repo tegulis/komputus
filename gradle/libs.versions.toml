@@ -1,0 +1,16 @@
+[versions]
+google-truth = "1.4.5"
+gradle-ktfmt = "0.25.0"
+gradle-versions = "0.53.0"
+junit = "6.0.1"
+kotlin = "2.3.0"
+
+[libraries]
+google-truth = { module = "com.google.truth:truth", version.ref = "google-truth" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
+junit-platform = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit" }
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+gradle-ktfmt = { id = "com.ncorti.ktfmt.gradle", version.ref = "gradle-ktfmt" }
+gradle-versions = { id = "com.github.ben-manes.versions", version.ref = "gradle-versions" }
