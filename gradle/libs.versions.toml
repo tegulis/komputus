@@ -1,9 +1,9 @@
 [versions]
 google-truth = "1.4.5"
-gradle-ktfmt = "0.25.0"
-gradle-versions = "0.53.0"
-junit = "6.0.1"
-kotlin = "2.3.0"
+gradle-ktfmt = "0.26.0"
+gradle-versions = "0.54.0"
+junit = "6.1.1"
+kotlin = "2.4.0"
 
 [libraries]
 google-truth = { module = "com.google.truth:truth", version.ref = "google-truth" }
