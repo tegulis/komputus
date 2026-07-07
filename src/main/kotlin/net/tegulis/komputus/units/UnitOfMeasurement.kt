@@ -10,6 +10,10 @@ interface UnitOfMeasurement {
     val pluralName: String
     val symbol: String
     val dimension: Dimension
+    /** Filters for the [Prefix]es that are customary with this unit (convention, not math). */
+    val prefixFilter: (Prefix) -> Boolean
+        get() = { true }
+
     val conversions: Set<UnitConversion>
 
     fun amountOf(amount: Number, prefix: Prefix) = Amount(amount, prefix, this)

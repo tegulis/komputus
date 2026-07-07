@@ -8,8 +8,8 @@ abstract class PrefixGroup {
     override fun toString(): String = this::class.simpleName ?: super.toString()
 }
 
-object NoScalingPrefixGroup : PrefixGroup() {
+object NotScalingPrefixGroup : PrefixGroup() {
     override val multiplier = 0
-    override val prefixes = listOf(NoScalingPrefix)
-    override val noScalingPrefix = NoScalingPrefix
+    override val prefixes = listOf(NotScalingPrefix)
+    override val noScalingPrefix = NotScalingPrefix
 }

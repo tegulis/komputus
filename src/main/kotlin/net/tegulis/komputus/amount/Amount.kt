@@ -9,7 +9,7 @@ import java.text.NumberFormat
 import java.util.Objects
 import net.tegulis.komputus.divideWithPrefix
 import net.tegulis.komputus.multiplyWithPrefix
-import net.tegulis.komputus.prefixes.NoScalingPrefix
+import net.tegulis.komputus.prefixes.NotScalingPrefix
 import net.tegulis.komputus.prefixes.Prefix
 import net.tegulis.komputus.toBigDecimalWithMathContext
 import net.tegulis.komputus.units.NoUnit
@@ -19,7 +19,7 @@ import net.tegulis.komputus.units.UnitOfMeasurement
  * [Amount] allows the specification of a decimal value with a [Prefix] and [UnitOfMeasurement]. The unscaled /
  * unprefixed value is stored in [magnitude].
  *
- * This (abstract) class provides various functions to work with this amount:
+ * This class provides various functions to work with this amount:
  * - [getScaledValue] to get the value in the desired prefix
  * - [alignPrefix] to find the right prefix to use for formatting the value
  * - [format] to format the amount using the currently set prefix and unit of measurement
@@ -27,16 +27,10 @@ import net.tegulis.komputus.units.UnitOfMeasurement
 class Amount : Comparable<Amount> {
 
     /** Always stores the unprefixed value. */
-    var magnitude: BigDecimal
+    val magnitude: BigDecimal
 
     /** The *preferred* prefix to use for formatting and retrieving the scaled value. */
-    var prefix: Prefix
-
-    /** Whether the prefix should be sticky: not changed automatically when formatting or scaling. */
-    var stickyPrefix: Boolean = defaultPrefixStickiness
-
-    /** Filter prefixes when aligning the prefix. */
-    var prefixFilter: (Prefix) -> Boolean = defaultPrefixFilter
+    val prefix: Prefix
 
     /** The unit of measurement. */
     val unit: UnitOfMeasurement
@@ -45,12 +39,12 @@ class Amount : Comparable<Amount> {
      * Creates an instance with a [magnitude] that is the [value] scaled with the given [prefix] (e.g. `Amount(1,
      * SI.KILO).magnitude == 1000`).
      *
-     * When the prefix is not specified, [NoScalingPrefix] is used.
+     * When the prefix is not specified, [NotScalingPrefix] is used.
      *
      * To avoid scaling, but still specify the [net.tegulis.komputus.prefixes.PrefixGroup], use the
      * [net.tegulis.komputus.prefixes.PrefixGroup.noScalingPrefix] of the group.
      */
-    constructor(value: BigDecimal, prefix: Prefix = NoScalingPrefix, unit: UnitOfMeasurement = NoUnit) {
+    constructor(value: BigDecimal, prefix: Prefix = NotScalingPrefix, unit: UnitOfMeasurement = NoUnit) {
         this.prefix = prefix
         this.unit = unit
         this.magnitude = value.multiplyWithPrefix(prefix)
@@ -61,15 +55,30 @@ class Amount : Comparable<Amount> {
      */
     constructor(
         value: Number,
-        prefix: Prefix = NoScalingPrefix,
+        prefix: Prefix = NotScalingPrefix,
         unit: UnitOfMeasurement = NoUnit,
     ) : this(value.toBigDecimalWithMathContext(), prefix, unit)
 
     /**
-     * Get the [magnitude] scaled with the desired prefix.
+     * Creates a copy of [source] instance with a different *preferred* [prefix]. The [magnitude] is carried over
+     * without any scaling.
+     */
+    private constructor(source: Amount, prefix: Prefix) {
+        this.magnitude = source.magnitude
+        this.prefix = prefix
+        this.unit = source.unit
+    }
+
+    /**
+     * Return a copy of this instance with [prefix] as the preferred prefix. The [magnitude] is carried over without any
+     * scaling.
      *
-     * If a prefix is not provided, the currently set prefix will be used. Consider providing or aligning the prefix
-     * first.
+     * Returns `this` when the prefix is already set.
+     */
+    fun withPrefix(prefix: Prefix): Amount = if (prefix == this.prefix) this else Amount(this, prefix)
+
+    /**
+     * Get the [magnitude] scaled with the current or desired prefix.
      *
      * @param prefix The desired prefix to return the value in.
      */
@@ -77,29 +86,25 @@ class Amount : Comparable<Amount> {
 
     /**
      * Find the right prefix from the same [net.tegulis.komputus.prefixes.PrefixGroup], that scales this amount above
-     * zero, but below the next bigger prefix. This function ignores [stickyPrefix] and will change the prefix if
-     * necessary.
+     * zero, but below the next bigger prefix - and return a new amount with the new prefix.
+     *
+     * Prefixes are filtered according to the [unit]'s [UnitOfMeasurement.prefixFilter] unless a different filter is
+     * provided.
      */
-    fun alignPrefix(prefixFilter: (Prefix) -> Boolean = defaultPrefixFilter): Amount {
+    fun alignPrefix(prefixFilter: (Prefix) -> Boolean = unit.prefixFilter): Amount {
         if (magnitude.abs().compareTo(BigDecimal.ZERO) == 0) {
-            this.prefix = prefix.prefixGroup.noScalingPrefix
-            return this
+            return withPrefix(prefix.prefixGroup.noScalingPrefix)
         }
-        val prefixes = prefix.prefixGroup.prefixes.filter(prefixFilter).sortedByDescending { it.value }.iterator()
-        while (prefixes.hasNext()) {
-            val prefix = prefixes.next()
-            val amount = magnitude.divideWithPrefix(prefix)
-            if (amount.abs() >= BigDecimal.ONE) {
-                this.prefix = prefix
-                return this
+        for (candidatePrefix in prefix.prefixGroup.prefixes.filter(prefixFilter).sortedByDescending { it.value }) {
+            if (magnitude.divideWithPrefix(candidatePrefix).abs() >= BigDecimal.ONE) {
+                return withPrefix(candidatePrefix)
             }
         }
         return this
     }
 
     /**
-     * Return the full formatting of this amount using the currently set prefix and unit. Unlike [toString], the prefix
-     * is not aligned beforehand.
+     * Return the full formatting of this amount using the set prefix and unit.
      *
      * @param numberFormat The [DecimalFormat] used to format the amount.
      * @param prefixAndUnitFormatString The [String.format] used to format the amount, prefix, and unit.
@@ -134,17 +139,7 @@ class Amount : Comparable<Amount> {
      *
      * @return The full formatting of this amount after aligning the prefix.
      */
-    override fun toString(): String {
-        if (!stickyPrefix) alignPrefix()
-        return format()
-    }
-
-    /** Return a copy of this [Amount]. */
-    fun copy(): Amount {
-        val newAmount = Amount(BigDecimal.ZERO, prefix, unit)
-        newAmount.magnitude = magnitude
-        return newAmount
-    }
+    override fun toString(): String = format()
 
     fun convertTo(unit: UnitOfMeasurement = this.unit): Amount = TODO()
 
@@ -159,10 +154,10 @@ class Amount : Comparable<Amount> {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is Amount) return false
-        return magnitude == other.magnitude && unit == other.unit
+        return magnitude.compareTo(other.magnitude) == 0 && unit == other.unit
     }
 
-    override fun hashCode(): Int = Objects.hash(magnitude, prefix, unit)
+    override fun hashCode(): Int = Objects.hash(magnitude.stripTrailingZeros(), unit)
 
     companion object {
 
@@ -186,10 +181,6 @@ class Amount : Comparable<Amount> {
             DecimalFormat.getInstance().apply { maximumFractionDigits = 2 }
         }
         var defaultPrefixAndUnitFormatString: String = $$"%1$s %2$s%3$s"
-        var defaultPrefixFilter: (Prefix) -> Boolean = { true }
-        var majorPrefixFilter: (Prefix) -> Boolean = { it.isMajor }
-
-        var defaultPrefixStickiness: Boolean = false
         /*
             fun sumForEntities(entityStream: Stream<out JEntity>, componentClass: Class<out Component>): BigDecimal {
                 return entityStream.map { entity -> getForEntity(entity, componentClass) }

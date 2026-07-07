@@ -37,11 +37,7 @@ object BinaryInformation : Dimension {
         override val dimension: Dimension
             get() = BinaryInformation
 
-        override fun amountOf(amount: Number, prefix: Prefix): Amount =
-            super.amountOf(amount, prefix).apply { prefixFilter = Amount.majorPrefixFilter }
-
-        override fun amountOf(amount: BigDecimal, prefix: Prefix): Amount =
-            super.amountOf(amount, prefix).apply { prefixFilter = Amount.majorPrefixFilter }
+        override val prefixFilter: (Prefix) -> Boolean = Prefix.majorPrefixFilter
     }
 
     const val BITS_IN_AN_OCTET = 8

@@ -2,7 +2,7 @@ package net.tegulis.komputus.amount
 
 import com.google.common.truth.Truth.assertThat
 import java.text.DecimalFormat
-import net.tegulis.komputus.prefixes.NoScalingPrefix
+import net.tegulis.komputus.prefixes.NotScalingPrefix
 import net.tegulis.komputus.units.Dimension
 import net.tegulis.komputus.units.NoDimension
 import net.tegulis.komputus.units.UnitConversion
@@ -34,25 +34,25 @@ class FormatTests {
                 minimumFractionDigits = 0
                 maximumFractionDigits = 0
             }
-        val zero = Amount(0, NoScalingPrefix, NoSymbolTestUnit)
+        val zero = Amount(0, NotScalingPrefix, NoSymbolTestUnit)
         assertThat(zero.format(preciseNumberFormat)).isEqualTo("0 tests")
         assertThat(zero.format(lossyNumberFormat)).isEqualTo("0 tests")
-        val some = Amount(0.0001, NoScalingPrefix, NoSymbolTestUnit)
+        val some = Amount(0.0001, NotScalingPrefix, NoSymbolTestUnit)
         assertThat(some.format(preciseNumberFormat)).isEqualTo("0.0001 test")
         assertThat(some.format(lossyNumberFormat)).isEqualTo("0 tests")
-        val negativeSome = Amount(-0.0001, NoScalingPrefix, NoSymbolTestUnit)
+        val negativeSome = Amount(-0.0001, NotScalingPrefix, NoSymbolTestUnit)
         assertThat(negativeSome.format(preciseNumberFormat)).isEqualTo("-0.0001 test")
         assertThat(negativeSome.format(lossyNumberFormat)).isEqualTo("-0 tests")
-        val one = Amount(1, NoScalingPrefix, NoSymbolTestUnit)
+        val one = Amount(1, NotScalingPrefix, NoSymbolTestUnit)
         assertThat(one.format(preciseNumberFormat)).isEqualTo("1 test")
         assertThat(one.format(lossyNumberFormat)).isEqualTo("1 test")
-        val negativeOne = Amount(-1, NoScalingPrefix, NoSymbolTestUnit)
+        val negativeOne = Amount(-1, NotScalingPrefix, NoSymbolTestUnit)
         assertThat(negativeOne.format(preciseNumberFormat)).isEqualTo("-1 test")
         assertThat(negativeOne.format(lossyNumberFormat)).isEqualTo("-1 test")
-        val more = Amount(1.0001, NoScalingPrefix, NoSymbolTestUnit)
+        val more = Amount(1.0001, NotScalingPrefix, NoSymbolTestUnit)
         assertThat(more.format(preciseNumberFormat)).isEqualTo("1.0001 tests")
         assertThat(more.format(lossyNumberFormat)).isEqualTo("1 test")
-        val negativeMore = Amount(-1.0001, NoScalingPrefix, NoSymbolTestUnit)
+        val negativeMore = Amount(-1.0001, NotScalingPrefix, NoSymbolTestUnit)
         assertThat(negativeMore.format(preciseNumberFormat)).isEqualTo("-1.0001 tests")
         assertThat(negativeMore.format(lossyNumberFormat)).isEqualTo("-1 test")
     }

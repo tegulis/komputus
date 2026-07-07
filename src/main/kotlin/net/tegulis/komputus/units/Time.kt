@@ -4,7 +4,7 @@ import java.math.BigDecimal
 import net.tegulis.komputus.amount.Amount
 import net.tegulis.komputus.divideWithMathContext
 import net.tegulis.komputus.multiplyWithMathContext
-import net.tegulis.komputus.prefixes.NoScalingPrefix
+import net.tegulis.komputus.prefixes.NotScalingPrefix
 import net.tegulis.komputus.prefixes.Prefix
 import net.tegulis.komputus.prefixes.SI
 
@@ -15,8 +15,8 @@ import net.tegulis.komputus.prefixes.SI
  * simpler version for measuring time compared to [java.time.Duration] or [java.time.Period].
  *
  * See why: https://en.wikipedia.org/wiki/Orders_of_magnitude_(time)
- * - Seconds align to major SI prefixes by default.
- * - All other units have [NoScalingPrefix] by default.
+ * - Seconds align to major SI prefixes for values below 1 only.
+ * - All other units have [NotScalingPrefix] by default.
  *
  * @see Amount.prefixFilter
  * @see Amount.majorPrefixFilter
@@ -34,6 +34,8 @@ object Time : Dimension {
         UnitOfMeasurement {
         override val dimension: Dimension
             get() = Time
+
+        override val prefixFilter: (Prefix) -> Boolean = Prefix.notScalingPrefixFilter
     }
 
     const val DAYS_IN_A_WEEK = 7
@@ -48,6 +50,7 @@ object Time : Dimension {
     const val SECONDS_IN_A_WEEK = SECONDS_IN_A_MINUTE * MINUTES_IN_A_WEEK
 
     object Second : TimeUnit("second", "seconds", "s") {
+        override val prefixFilter: (Prefix) -> Boolean = { it.power <= 0 && it.isMajor }
         override val conversions: Set<UnitConversion> by lazy {
             setOf(
                 Minute to { it.divideWithMathContext(SECONDS_IN_A_MINUTE) },
@@ -56,12 +59,6 @@ object Time : Dimension {
                 Week to { it.divideWithMathContext(SECONDS_IN_A_WEEK) },
             )
         }
-
-        override fun amountOf(amount: Number, prefix: Prefix): Amount =
-            super.amountOf(amount, prefix).apply { prefixFilter = Amount.majorPrefixFilter }
-
-        override fun amountOf(amount: BigDecimal, prefix: Prefix): Amount =
-            super.amountOf(amount, prefix).apply { prefixFilter = Amount.majorPrefixFilter }
     }
 
     object Minute : TimeUnit("minute", "minutes", "min") {
@@ -119,25 +116,25 @@ fun Amount.Companion.ofSeconds(seconds: Number, prefix: Prefix = SI.noScalingPre
 fun Amount.Companion.ofSeconds(seconds: BigDecimal, prefix: Prefix = SI.noScalingPrefix): Amount =
     Time.Second.amountOf(seconds, prefix)
 
-fun Amount.Companion.ofMinutes(minutes: Number, prefix: Prefix = NoScalingPrefix): Amount =
+fun Amount.Companion.ofMinutes(minutes: Number, prefix: Prefix = NotScalingPrefix): Amount =
     Time.Minute.amountOf(minutes, prefix)
 
-fun Amount.Companion.ofMinutes(minutes: BigDecimal, prefix: Prefix = NoScalingPrefix): Amount =
+fun Amount.Companion.ofMinutes(minutes: BigDecimal, prefix: Prefix = NotScalingPrefix): Amount =
     Time.Minute.amountOf(minutes, prefix)
 
-fun Amount.Companion.ofHours(hours: Number, prefix: Prefix = NoScalingPrefix): Amount =
+fun Amount.Companion.ofHours(hours: Number, prefix: Prefix = NotScalingPrefix): Amount =
     Time.Hour.amountOf(hours, prefix)
 
-fun Amount.Companion.ofHours(hours: BigDecimal, prefix: Prefix = NoScalingPrefix): Amount =
+fun Amount.Companion.ofHours(hours: BigDecimal, prefix: Prefix = NotScalingPrefix): Amount =
     Time.Hour.amountOf(hours, prefix)
 
-fun Amount.Companion.ofDays(days: Number, prefix: Prefix = NoScalingPrefix): Amount = Time.Day.amountOf(days, prefix)
+fun Amount.Companion.ofDays(days: Number, prefix: Prefix = NotScalingPrefix): Amount = Time.Day.amountOf(days, prefix)
 
-fun Amount.Companion.ofDays(days: BigDecimal, prefix: Prefix = NoScalingPrefix): Amount =
+fun Amount.Companion.ofDays(days: BigDecimal, prefix: Prefix = NotScalingPrefix): Amount =
     Time.Day.amountOf(days, prefix)
 
-fun Amount.Companion.ofWeeks(weeks: Number, prefix: Prefix = NoScalingPrefix): Amount =
+fun Amount.Companion.ofWeeks(weeks: Number, prefix: Prefix = NotScalingPrefix): Amount =
     Time.Week.amountOf(weeks, prefix)
 
-fun Amount.Companion.ofWeeks(weeks: BigDecimal, prefix: Prefix = NoScalingPrefix): Amount =
+fun Amount.Companion.ofWeeks(weeks: BigDecimal, prefix: Prefix = NotScalingPrefix): Amount =
     Time.Week.amountOf(weeks, prefix)

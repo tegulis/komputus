@@ -3,7 +3,7 @@ package net.tegulis.komputus.amount
 import com.google.common.truth.Truth.assertThat
 import java.math.BigDecimal
 import net.tegulis.komputus.prefixes.IEC
-import net.tegulis.komputus.prefixes.NoScalingPrefix
+import net.tegulis.komputus.prefixes.NotScalingPrefix
 import net.tegulis.komputus.prefixes.Prefix
 import net.tegulis.komputus.prefixes.SI
 import org.junit.jupiter.api.DisplayName
@@ -17,8 +17,18 @@ class ScalingTests {
     @MethodSource("prefixesWithScale")
     @DisplayName("Amount#magnitude is calculated correctly from Prefix")
     fun `Amount#magnitude is calculated correctly from Prefix`(prefix: Prefix, expectedMagnitude: BigDecimal) {
-        val value = BigDecimal("1")
-        assertThat(Amount(value, prefix).magnitude).isEquivalentAccordingToCompareTo(expectedMagnitude)
+        val bigDecimalValue = BigDecimal("1")
+        val byteValue = 1.toByte()
+        val intValue = 1
+        val longValue = 1L
+        val floatValue = 1f
+        val doubleValue = 1.0
+        listOf(bigDecimalValue, byteValue, intValue, longValue, floatValue, doubleValue).forEach { number ->
+            assertThat(Amount(number, prefix).magnitude).isEquivalentAccordingToCompareTo(expectedMagnitude)
+            if (prefix.power == 0) {
+                assertThat(Amount(number).magnitude).isEquivalentAccordingToCompareTo(expectedMagnitude)
+            }
+        }
     }
 
     companion object {
@@ -26,7 +36,7 @@ class ScalingTests {
         fun prefixesWithScale(): List<Arguments> =
             listOf(
                 // NoScalingPrefix
-                Arguments.of(NoScalingPrefix, BigDecimal("1")),
+                Arguments.of(NotScalingPrefix, BigDecimal("1")),
                 // IEC prefixes
                 Arguments.of(IEC.NONE, BigDecimal("1")),
                 Arguments.of(IEC.KIBI, BigDecimal("1024")),
