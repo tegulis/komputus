@@ -1,7 +1,6 @@
 package net.tegulis.komputus.amount
 
 import java.math.BigDecimal
-import java.math.BigInteger
 import java.math.MathContext
 import java.math.RoundingMode
 import java.text.DecimalFormat
@@ -106,6 +105,10 @@ class Amount : Comparable<Amount> {
     /**
      * Return the full formatting of this amount using the set prefix and unit.
      *
+     * When the unit has no symbol, [UnitOfMeasurement.name] or [UnitOfMeasurement.pluralName] is chosen based on the
+     * *displayed* value: the singular form is used exactly when the value formats to the same string as one does (e.g.
+     * `1.0001` with two fraction digits displays as `1` and is singular).
+     *
      * @param numberFormat The [DecimalFormat] used to format the amount.
      * @param prefixAndUnitFormatString The [String.format] used to format the amount, prefix, and unit.
      * @return The full formatting of this amount without aligning the prefix first.
@@ -114,18 +117,13 @@ class Amount : Comparable<Amount> {
         numberFormat: NumberFormat = defaultNumberFormatProvider(),
         prefixAndUnitFormatString: String = defaultPrefixAndUnitFormatString,
     ): String {
-        val formattedValue = numberFormat.format(getScaledValue())
-        val valueAsFormatted = BigDecimal(formattedValue)
+        val scaledValue = getScaledValue()
+        val formattedValue = numberFormat.format(scaledValue)
         val unitSymbolPadding = if (prefix.symbol.isNotBlank()) " " else ""
         var unitSymbol = unit.symbol
         if (unitSymbol.isBlank() && unit.name.isNotBlank() && unit.pluralName.isNotBlank()) {
-            unitSymbol =
-                unitSymbolPadding +
-                    if (valueAsFormatted.unscaledValue().abs().compareTo(BigInteger.ONE) == 0) {
-                        unit.name
-                    } else {
-                        unit.pluralName
-                    }
+            val displaysAsOne = numberFormat.format(scaledValue.abs()) == numberFormat.format(BigDecimal.ONE)
+            unitSymbol = unitSymbolPadding + if (displaysAsOne) unit.name else unit.pluralName
         }
         if (unitSymbol.isBlank() && unit.name.isNotBlank() && unit.pluralName.isBlank()) {
             unitSymbol = unitSymbolPadding + unit.name
@@ -134,17 +132,27 @@ class Amount : Comparable<Amount> {
     }
 
     /**
-     * Align prefix (unless [stickyPrefix] is `true`) and return the full formatting of this amount. Equivalent to
-     * [alignPrefix] + [format].
+     * Return the full formatting of this amount using the *currently preferred* prefix, without aligning it first. Use
+     * [alignPrefix] + [format] to align.
      *
-     * @return The full formatting of this amount after aligning the prefix.
+     * Equivalent to [format] with default arguments.
      */
     override fun toString(): String = format()
 
     fun convertTo(unit: UnitOfMeasurement = this.unit): Amount = TODO()
 
-    /** TODO: different units? */
-    override fun compareTo(other: Amount): Int = magnitude.compareTo(other.magnitude)
+    /**
+     * Compare this instance with another [Amount] for order.
+     * Returned value follow conventions in [Comparable.compareTo].
+     *
+     * TODO: convert to base unit (eg. 60 seconds == 1 minute) - currently throws
+     *
+     * @throws IllegalArgumentException if the units are different
+     */
+    override fun compareTo(other: Amount): Int {
+        require(unit == other.unit) { "Cannot compare amounts with different units: $unit != ${other.unit}" }
+        return magnitude.compareTo(other.magnitude)
+    }
 
     /**
      * Two instances are equal if they have the same magnitude and unit.
