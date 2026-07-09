@@ -22,8 +22,11 @@ import net.tegulis.komputus.prefixes.SI
  * @see Prefix.Companion.majorPrefixFilter
  * @see Prefix.isMajor
  *
- * TODO: Implement convenience functions to convert from [Amount] to [java.time.Duration], [java.time.Period] and
- *   vice-versa
+ * Conversions to and from [java.time.Duration] and [kotlin.time.Duration] are provided in
+ * net.tegulis.komputus.Duration.kt ([net.tegulis.komputus.toAmount], [net.tegulis.komputus.toJavaDuration],
+ * [net.tegulis.komputus.toKotlinDuration]).
+ *
+ * TODO: Implement convenience functions to convert between [Amount] and [java.time.Period]
  */
 object Time : Dimension {
     override val units: List<UnitOfMeasurement> by lazy { listOf(Second, Minute, Hour, Day, Week) }
