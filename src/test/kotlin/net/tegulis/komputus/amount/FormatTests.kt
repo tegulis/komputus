@@ -6,7 +6,6 @@ import java.util.Locale
 import net.tegulis.komputus.prefixes.NotScalingPrefix
 import net.tegulis.komputus.units.Dimension
 import net.tegulis.komputus.units.NoDimension
-import net.tegulis.komputus.units.UnitConversion
 import net.tegulis.komputus.units.UnitOfMeasurement
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -18,12 +17,10 @@ class FormatTests {
         override val pluralName: String = "tests"
         override val symbol: String = ""
         override val dimension: Dimension = NoDimension
-        override val conversions: Set<UnitConversion> = emptySet()
     }
 
     @Test
     @DisplayName("UnitOfMeasurement.name and .pluralName are used when .symbol is blank")
-    @Suppress("GrazieStyle")
     fun `UnitOfMeasurement#name and #pluralName are used when #symbol is blank`() {
         val preciseNumberFormat =
             DecimalFormat.getInstance().apply {

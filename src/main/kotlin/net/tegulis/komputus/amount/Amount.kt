@@ -6,75 +6,100 @@ import java.math.RoundingMode
 import java.text.DecimalFormat
 import java.text.NumberFormat
 import java.util.Objects
+import net.tegulis.komputus.amount.Amount.Companion.defaultNonTerminatingPrecision
+import net.tegulis.komputus.divideWithMathContext
 import net.tegulis.komputus.divideWithPrefix
+import net.tegulis.komputus.multiplyWithMathContext
 import net.tegulis.komputus.multiplyWithPrefix
 import net.tegulis.komputus.prefixes.NotScalingPrefix
 import net.tegulis.komputus.prefixes.Prefix
+import net.tegulis.komputus.prefixes.PrefixGroup
 import net.tegulis.komputus.toBigDecimalWithMathContext
+import net.tegulis.komputus.units.Dimension
 import net.tegulis.komputus.units.NoUnit
 import net.tegulis.komputus.units.UnitOfMeasurement
 
 /**
- * [Amount] allows the specification of a decimal value with a [Prefix] and [UnitOfMeasurement]. The unscaled /
- * unprefixed value is stored in [magnitude].
+ * [Amount] allows the specification of a decimal value with a [Prefix] and [UnitOfMeasurement]. The unprefixed,
+ * unscaled, actual value is stored in [magnitude]. The scaled value is available in [scaledValue].
  *
- * This class provides various functions to work with this amount:
- * - [getScaledValue] to get the value in the desired prefix
- * - [alignPrefix] to find the right prefix to use for formatting the value
- * - [format] to format the amount using the currently set prefix and unit of measurement
+ * [Amount] is immutable. Every operation returns a new instance of [Amount]. IF the operation has no effect, the same
+ * instance is returned.
+ *
+ * The class provides various functions to work with this amount:
+ * - [getScaledValue] to get the value in the desired [Prefix]
+ * - [alignPrefix] to find the right [Prefix] to use for formatting the value
+ * - [align] to optionally change the unit of measurement before aligning the [Prefix]
+ * - [withPrefix] to create a copy of the instance with the desired new [Prefix]
+ * - [format] (or [toString]) to format the amount using the currently set [Prefix] and [UnitOfMeasurement]
+ *
+ * The most powerful part of this class is comparisons and conversions:
+ * - [align] can change the unit of measurement to find the best in the same [Dimension]
+ * - [compareTo] can compare amounts in the same [Dimension], even in different units
+ * - [convertTo] can convert amounts to other units within the same [Dimension]
+ *
+ * @see PrefixGroup
+ * @see UnitOfMeasurement
  */
 class Amount : Comparable<Amount> {
 
-    /** Always stores the unprefixed value. */
+    /** Unprefixed, unscaled, actual value (i.e. magnitude) of this amount. */
     val magnitude: BigDecimal
 
-    /** The *preferred* prefix to use for formatting and retrieving the scaled value. */
+    /** The prefix to use for formatting and retrieving the scaled value. */
     val prefix: Prefix
 
     /** The unit of measurement. */
     val unit: UnitOfMeasurement
 
+    /** The [magnitude] expressed in the [unit]'s [Dimension]'s [Dimension.baseUnit]. */
+    val baseMagnitude: BigDecimal
+
     /**
-     * Creates an instance with a [magnitude] that is the [value] scaled with the given [prefix] (e.g. `Amount(1,
-     * SI.KILO).magnitude == 1000`).
+     * Create an instance with a [magnitude] = [value] * [prefix]. For example: `Amount(1, SI.KILO).magnitude == 1000`
      *
-     * When the prefix is not specified, [NotScalingPrefix] is used.
+     * To create a "raw" amount without scaling the provided [value] with the prefix, set [raw] to `true`. For example:
+     * `Amount(1000, SI.KILO, raw = true).magnitude == 1000`
      *
-     * To avoid scaling, but still specify the [net.tegulis.komputus.prefixes.PrefixGroup], use the
-     * [net.tegulis.komputus.prefixes.PrefixGroup.noScalingPrefix] of the group.
+     * To specify the [PrefixGroup], use the [PrefixGroup.defaultNotScalingPrefix] of the group.
+     *
+     * @param value to be scaled with [prefix] to get the desired [magnitude]
+     * @param prefix the desired prefix to scale [value] with
+     * @param unit the unit of measurement
+     * @param raw if set to `true`, [magnitude] will be set to [value] without scaling
      */
-    constructor(value: BigDecimal, prefix: Prefix = NotScalingPrefix, unit: UnitOfMeasurement = NoUnit) {
+    constructor(
+        value: BigDecimal,
+        prefix: Prefix = NotScalingPrefix,
+        unit: UnitOfMeasurement = NoUnit,
+        raw: Boolean = false,
+    ) {
+        this.magnitude = if (raw) value else value.multiplyWithPrefix(prefix)
         this.prefix = prefix
         this.unit = unit
-        this.magnitude = value.multiplyWithPrefix(prefix)
+        this.baseMagnitude = unit.toBase(magnitude)
     }
 
     /**
      * Convenience constructor to make sure [Number]s are converted to [BigDecimal]s with [toBigDecimalWithMathContext].
+     * Equivalent to `Amount(value.toBigDecimalWithMathContext(), prefix, unit)`.
      */
     constructor(
         value: Number,
         prefix: Prefix = NotScalingPrefix,
         unit: UnitOfMeasurement = NoUnit,
-    ) : this(value.toBigDecimalWithMathContext(), prefix, unit)
+        raw: Boolean = false,
+    ) : this(value.toBigDecimalWithMathContext(), prefix, unit, raw)
 
     /**
-     * Creates a copy of [source] instance with a different *preferred* [prefix]. The [magnitude] is carried over
-     * without any scaling.
+     * Create a copy of this instance with the given [magnitude], [prefix] and [unit]. All parameters default to the
+     * current values of the instance.
      */
-    private constructor(source: Amount, prefix: Prefix) {
-        this.magnitude = source.magnitude
-        this.prefix = prefix
-        this.unit = source.unit
-    }
-
-    /**
-     * Return a copy of this instance with [prefix] as the preferred prefix. The [magnitude] is carried over without any
-     * scaling.
-     *
-     * Returns `this` when the prefix is already set.
-     */
-    fun withPrefix(prefix: Prefix): Amount = if (prefix == this.prefix) this else Amount(this, prefix)
+    fun copy(
+        magnitude: BigDecimal = this.magnitude,
+        prefix: Prefix = this.prefix,
+        unit: UnitOfMeasurement = this.unit,
+    ): Amount = Amount(magnitude, prefix, unit, true)
 
     /**
      * Get the [magnitude] scaled with the current or desired prefix.
@@ -82,6 +107,18 @@ class Amount : Comparable<Amount> {
      * @param prefix The desired prefix to return the value in.
      */
     fun getScaledValue(prefix: Prefix = this.prefix): BigDecimal = magnitude.divideWithPrefix(prefix)
+
+    /** Shorthand for [getScaledValue]. */
+    val scaledValue: BigDecimal
+        get() = getScaledValue()
+
+    /**
+     * Align this amount using its dimension's alignment strategy by calling [Dimension.align].
+     *
+     * [Dimension.align] may switch to a different unit (e.g. 3600 seconds align to 1 hour). Use [alignPrefix] to align
+     * only the prefix within the current unit.
+     */
+    fun align(): Amount = unit.dimension.align(this)
 
     /**
      * Find the right prefix from the same [net.tegulis.komputus.prefixes.PrefixGroup], that scales this amount above
@@ -92,11 +129,13 @@ class Amount : Comparable<Amount> {
      */
     fun alignPrefix(prefixFilter: (Prefix) -> Boolean = unit.prefixFilter): Amount {
         if (magnitude.abs().compareTo(BigDecimal.ZERO) == 0) {
-            return withPrefix(prefix.prefixGroup.noScalingPrefix)
+            if (prefix == prefix.prefixGroup.defaultNotScalingPrefix) return this
+            return copy(prefix = prefix.prefixGroup.defaultNotScalingPrefix)
         }
         for (candidatePrefix in prefix.prefixGroup.prefixes.filter(prefixFilter).sortedByDescending { it.value }) {
             if (magnitude.divideWithPrefix(candidatePrefix).abs() >= BigDecimal.ONE) {
-                return withPrefix(candidatePrefix)
+                if (candidatePrefix == prefix) return this
+                return copy(prefix = candidatePrefix)
             }
         }
         return this
@@ -132,49 +171,119 @@ class Amount : Comparable<Amount> {
     }
 
     /**
-     * Return the full formatting of this amount using the *currently preferred* prefix, without aligning it first. Use
-     * [alignPrefix] + [format] to align.
+     * Return the full formatting of this amount using the prefix, without aligning it. Use [alignPrefix] + [format] to
+     * align.
      *
      * Equivalent to [format] with default arguments.
      */
     override fun toString(): String = format()
 
-    fun convertTo(unit: UnitOfMeasurement = this.unit): Amount = TODO()
-
     /**
-     * Compare this instance with another [Amount] for order.
-     * Returned value follow conventions in [Comparable.compareTo].
+     * Compare this instance with another [Amount] of the same dimension for order. Amounts are compared by their
+     * magnitude in the dimension's base unit, so 60 seconds compare equal to 1 minute. Returned value follows
+     * conventions in [Comparable.compareTo].
      *
-     * TODO: convert to base unit (eg. 60 seconds == 1 minute) - currently throws
-     *
-     * @throws IllegalArgumentException if the units are different
+     * @throws IllegalArgumentException if the dimensions are different
      */
     override fun compareTo(other: Amount): Int {
-        require(unit == other.unit) { "Cannot compare amounts with different units: $unit != ${other.unit}" }
-        return magnitude.compareTo(other.magnitude)
+        require(unit.dimension == other.unit.dimension) {
+            @Suppress("GrazieInspection")
+            "Cannot compare amounts of different dimensions: ${unit.dimension} != ${other.unit.dimension}"
+        }
+        return baseMagnitude.compareTo(other.baseMagnitude)
     }
 
     /**
-     * Two instances are equal if they have the same magnitude and unit.
+     * Two instances are equal if they have the same dimension and represent the same magnitude in the dimension's base
+     * unit (e.g. 60 seconds == 1 minute).
      *
-     * TODO: or can be converted to the same unit (eg. 60 seconds == 1 minute)
+     * Unlike [compareTo], equals never throws: amounts of different dimensions are simply not equal.
      */
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is Amount) return false
-        return magnitude.compareTo(other.magnitude) == 0 && unit == other.unit
+        return unit.dimension == other.unit.dimension && baseMagnitude.compareTo(other.baseMagnitude) == 0
     }
 
-    override fun hashCode(): Int = Objects.hash(magnitude.stripTrailingZeros(), unit)
+    override fun hashCode(): Int = Objects.hash(baseMagnitude.stripTrailingZeros(), unit.dimension)
+
+    /**
+     * Convert this amount to another [newUnit] of the same dimension, going through the dimension's base unit
+     * ([UnitOfMeasurement.toBase] + [UnitOfMeasurement.fromBase]).
+     *
+     * The prefix is carried over when the target [newUnit]'s [UnitOfMeasurement.prefixFilter] admits it, and reset to
+     * the prefix group's [net.tegulis.komputus.prefixes.PrefixGroup.defaultNotScalingPrefix] otherwise.
+     *
+     * Returns `this` when [newUnit] is already set. Divisions with non-terminating decimal expansions are rounded to
+     * [defaultNonTerminatingPrecision], so converting back and forth can be approximate.
+     *
+     * @throws IllegalArgumentException if the dimensions differ
+     */
+    fun convertTo(newUnit: UnitOfMeasurement = this.unit): Amount {
+        if (newUnit == this.unit) {
+            return this
+        }
+        require(newUnit.dimension == this.unit.dimension) {
+            "Cannot convert between dimensions: ${this.unit.dimension} (${this.unit.name}) and " +
+                "${newUnit.dimension} (${newUnit.name})"
+        }
+        return if (newUnit.prefixFilter(prefix)) {
+            copy(magnitude = newUnit.fromBase(baseMagnitude), unit = newUnit)
+        } else {
+            copy(
+                magnitude = newUnit.fromBase(baseMagnitude),
+                prefix = prefix.prefixGroup.defaultNotScalingPrefix,
+                unit = newUnit,
+            )
+        }
+    }
+
+    /**
+     * Add [other] to this amount. [other] is converted to this amount's unit first with [convertTo]. The result keeps
+     * this instance's unit and prefix.
+     *
+     * @throws IllegalArgumentException if the dimensions differ
+     */
+    operator fun plus(other: Amount): Amount = copy(magnitude.add(other.convertTo(unit).magnitude))
+
+    /**
+     * Subtract [other] from this amount. [other] is converted to this amount's unit first with [convertTo]. The result
+     * keeps this instance's unit and prefix.
+     *
+     * @throws IllegalArgumentException if the dimensions differ
+     */
+    operator fun minus(other: Amount): Amount = copy(magnitude.subtract(other.convertTo(unit).magnitude))
+
+    /** Multiply this amount by a dimensionless [factor], keeping unit and prefix. */
+    operator fun times(factor: Number): Amount = copy(magnitude.multiplyWithMathContext(factor))
+
+    /**
+     * Divide this amount by a dimensionless [divisor], keeping unit and prefix. Divisions with non-terminating decimal
+     * expansions are rounded to [defaultNonTerminatingPrecision].
+     */
+    operator fun div(divisor: Number): Amount = copy(magnitude.divideWithMathContext(divisor))
+
+    /** Negate this amount, keeping unit and prefix. */
+    operator fun unaryMinus(): Amount = copy(magnitude.negate())
 
     companion object {
 
+        // TODO: automatic alignment
+        var autoAlignPrefix: Boolean = false
+        var autoAlign: Boolean = false
+            set(value) {
+                field = value
+                if (value) autoAlignPrefix = true
+            }
+
+        // TODO: make this val and allow changing the precision per instance / arithmetic
         var defaultPrecision: Int = 0
         var defaultNonTerminatingPrecision: Int = 10
         var defaultRoundingMode: RoundingMode = RoundingMode.HALF_DOWN
         val defaultMathContext: MathContext
             get() = MathContext(defaultPrecision, defaultRoundingMode)
 
+        // TODO: make this a configuration data class?
         /**
          * Provides a new instance of [NumberFormat] for default formatting.
          *

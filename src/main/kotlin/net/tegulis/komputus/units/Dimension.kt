@@ -1,5 +1,7 @@
 package net.tegulis.komputus.units
 
+import net.tegulis.komputus.amount.Amount
+
 // TODO:
 //  Time: second, minute, hour, day
 //  Length: meter, kilometer, inch, foot, mile
@@ -33,6 +35,18 @@ package net.tegulis.komputus.units
 interface Dimension {
     val units: List<UnitOfMeasurement>
     val baseUnit: UnitOfMeasurement
+
+    /**
+     * Align [amount] to the fitting [UnitOfMeasurement] within this [Dimension]. By default, only the prefix is aligned
+     * (with [Amount.alignPrefix]). Dimensions may override this to switch units as well (e.g. [Time] aligns 3600
+     * seconds to 1 hour).
+     *
+     * @throws IllegalArgumentException if [amount] does not belong to this dimension
+     */
+    fun align(amount: Amount): Amount {
+        require(amount.unit.dimension == this) { "Cannot align an amount of ${amount.unit.dimension} with $this" }
+        return amount.alignPrefix()
+    }
 }
 
 object NoDimension : Dimension {

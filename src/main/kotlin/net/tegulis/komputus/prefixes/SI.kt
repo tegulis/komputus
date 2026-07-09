@@ -34,7 +34,7 @@ object SI : PrefixGroup() {
             QUECTO,
         )
     }
-    override val noScalingPrefix: Prefix
+    override val defaultNotScalingPrefix: Prefix
         get() = NONE
 
     sealed class SIPrefix(override val symbol: String, override val power: Int) : Prefix() {

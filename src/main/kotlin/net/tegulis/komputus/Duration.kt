@@ -11,6 +11,6 @@ fun Duration.getTotalSeconds(): BigDecimal =
     this.nano.toBigDecimalWithMathContext().movePointLeft(9).add(this.seconds.toBigDecimalWithMathContext())
 
 /** Convert a [Duration] to an [Amount] of [Time.Second]s with SI prefix. */
-fun Duration.toAmount(): Amount = Amount(this.getTotalSeconds(), SI.noScalingPrefix, Time.Second)
+fun Duration.toAmount(): Amount = Amount(this.getTotalSeconds(), SI.defaultNotScalingPrefix, Time.Second)
 
 // TODO: convert Period to Amount

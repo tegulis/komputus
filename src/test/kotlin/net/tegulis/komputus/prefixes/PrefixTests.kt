@@ -30,7 +30,7 @@ class PrefixGroupTests {
     @MethodSource(Parameters.PREFIX_GROUP_PROVIDER)
     @DisplayName("PrefixGroup.prefixes contains PrefixGroup.noScalePrefix")
     fun `PrefixGroup#prefixes contains PrefixGroup#noScalePrefix`(prefixGroup: PrefixGroup) {
-        assertThat(prefixGroup.prefixes).contains(prefixGroup.noScalingPrefix)
+        assertThat(prefixGroup.prefixes).contains(prefixGroup.defaultNotScalingPrefix)
     }
 
     @ParameterizedTest(name = "{0}")

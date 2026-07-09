@@ -18,8 +18,8 @@ import net.tegulis.komputus.prefixes.SI
  * - Seconds align to major SI prefixes for values below 1 only.
  * - All other units have [NotScalingPrefix] by default.
  *
- * @see Amount.prefixFilter
- * @see Amount.majorPrefixFilter
+ * @see UnitOfMeasurement.prefixFilter
+ * @see Prefix.Companion.majorPrefixFilter
  * @see Prefix.isMajor
  *
  * TODO: Implement convenience functions to convert from [Amount] to [java.time.Duration], [java.time.Period] and
@@ -30,17 +30,22 @@ object Time : Dimension {
     override val baseUnit: UnitOfMeasurement
         get() = Second
 
-    sealed class TimeUnit(override val name: String, override val pluralName: String, override val symbol: String) :
-        UnitOfMeasurement {
+    sealed class TimeUnit(
+        override val name: String,
+        override val pluralName: String,
+        override val symbol: String,
+        secondsPerUnit: Int = 1,
+    ) : UnitOfMeasurement {
         override val dimension: Dimension
             get() = Time
 
         override val prefixFilter: (Prefix) -> Boolean = Prefix.notScalingPrefixFilter
+        override val toBase: (BigDecimal) -> BigDecimal = { it.multiplyWithMathContext(secondsPerUnit) }
+        override val fromBase: (BigDecimal) -> BigDecimal = { it.divideWithMathContext(secondsPerUnit) }
     }
 
     const val DAYS_IN_A_WEEK = 7
     const val HOURS_IN_A_DAY = 24
-    const val HOURS_IN_A_WEEK = HOURS_IN_A_DAY * DAYS_IN_A_WEEK
     const val MINUTES_IN_AN_HOUR = 60
     const val MINUTES_IN_A_DAY = MINUTES_IN_AN_HOUR * HOURS_IN_A_DAY
     const val MINUTES_IN_A_WEEK = MINUTES_IN_A_DAY * DAYS_IN_A_WEEK
@@ -51,58 +56,32 @@ object Time : Dimension {
 
     object Second : TimeUnit("second", "seconds", "s") {
         override val prefixFilter: (Prefix) -> Boolean = { it.power <= 0 && it.isMajor }
-        override val conversions: Set<UnitConversion> by lazy {
-            setOf(
-                Minute to { it.divideWithMathContext(SECONDS_IN_A_MINUTE) },
-                Hour to { it.divideWithMathContext(SECONDS_IN_AN_HOUR) },
-                Day to { it.divideWithMathContext(SECONDS_IN_A_DAY) },
-                Week to { it.divideWithMathContext(SECONDS_IN_A_WEEK) },
-            )
-        }
     }
 
-    object Minute : TimeUnit("minute", "minutes", "min") {
-        override val conversions: Set<UnitConversion> by lazy {
-            setOf(
-                Second to { it.multiplyWithMathContext(SECONDS_IN_A_MINUTE) },
-                Hour to { it.divideWithMathContext(MINUTES_IN_AN_HOUR) },
-                Day to { it.divideWithMathContext(MINUTES_IN_A_DAY) },
-                Week to { it.divideWithMathContext(MINUTES_IN_A_WEEK) },
-            )
-        }
-    }
+    object Minute : TimeUnit("minute", "minutes", "min", SECONDS_IN_A_MINUTE)
 
-    object Hour : TimeUnit("hour", "hours", "h") {
-        override val conversions: Set<UnitConversion> by lazy {
-            setOf(
-                Second to { it.multiplyWithMathContext(SECONDS_IN_AN_HOUR) },
-                Minute to { it.multiplyWithMathContext(MINUTES_IN_AN_HOUR) },
-                Day to { it.divideWithMathContext(HOURS_IN_A_DAY) },
-                Week to { it.divideWithMathContext(HOURS_IN_A_WEEK) },
-            )
-        }
-    }
+    object Hour : TimeUnit("hour", "hours", "h", SECONDS_IN_AN_HOUR)
 
-    object Day : TimeUnit("day", "days", "d") {
-        override val conversions: Set<UnitConversion> by lazy {
-            setOf(
-                Second to { it.multiplyWithMathContext(SECONDS_IN_A_DAY) },
-                Minute to { it.multiplyWithMathContext(MINUTES_IN_A_DAY) },
-                Hour to { it.multiplyWithMathContext(HOURS_IN_A_DAY) },
-                Week to { it.divideWithMathContext(DAYS_IN_A_WEEK) },
-            )
-        }
-    }
+    object Day : TimeUnit("day", "days", "d", SECONDS_IN_A_DAY)
 
-    object Week : TimeUnit("week", "weeks", "w") {
-        override val conversions: Set<UnitConversion> by lazy {
-            setOf(
-                Second to { it.multiplyWithMathContext(SECONDS_IN_A_WEEK) },
-                Minute to { it.multiplyWithMathContext(MINUTES_IN_A_WEEK) },
-                Hour to { it.multiplyWithMathContext(HOURS_IN_A_WEEK) },
-                Day to { it.multiplyWithMathContext(DAYS_IN_A_WEEK) },
-            )
+    object Week : TimeUnit("week", "weeks", "w", SECONDS_IN_A_WEEK)
+
+    /**
+     * Align by switching to the largest unit that yields a [Amount.magnitude] of at least one. For example, 3600
+     * seconds align to 1 hour, 90 seconds to 1.5 minutes.
+     *
+     * Amounts below one minute are converted to [Second] and aligned with [Amount.alignPrefix]. For example, 0.5
+     * seconds align to 500 milliseconds.
+     */
+    override fun align(amount: Amount): Amount {
+        require(amount.unit.dimension == this) { "Cannot align an amount of ${amount.unit.dimension} with $this" }
+        for (unit in listOf(Week, Day, Hour, Minute)) {
+            val converted = amount.convertTo(unit)
+            if (converted.magnitude.abs() >= BigDecimal.ONE) {
+                return converted
+            }
         }
+        return amount.convertTo(Second).alignPrefix()
     }
 }
 
@@ -110,10 +89,10 @@ object Time : Dimension {
 // Convenience functions for creating time amounts
 //
 
-fun Amount.Companion.ofSeconds(seconds: Number, prefix: Prefix = SI.noScalingPrefix): Amount =
+fun Amount.Companion.ofSeconds(seconds: Number, prefix: Prefix = SI.defaultNotScalingPrefix): Amount =
     Time.Second.amountOf(seconds, prefix)
 
-fun Amount.Companion.ofSeconds(seconds: BigDecimal, prefix: Prefix = SI.noScalingPrefix): Amount =
+fun Amount.Companion.ofSeconds(seconds: BigDecimal, prefix: Prefix = SI.defaultNotScalingPrefix): Amount =
     Time.Second.amountOf(seconds, prefix)
 
 fun Amount.Companion.ofMinutes(minutes: Number, prefix: Prefix = NotScalingPrefix): Amount =

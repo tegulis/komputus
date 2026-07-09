@@ -1,11 +1,8 @@
-package net.tegulis.komputus.amount
+package net.tegulis.komputus.prefixes
 
-import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth
 import java.math.BigDecimal
-import net.tegulis.komputus.prefixes.IEC
-import net.tegulis.komputus.prefixes.NotScalingPrefix
-import net.tegulis.komputus.prefixes.Prefix
-import net.tegulis.komputus.prefixes.SI
+import net.tegulis.komputus.amount.Amount
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
@@ -24,9 +21,9 @@ class ScalingTests {
         val floatValue = 1f
         val doubleValue = 1.0
         listOf(bigDecimalValue, byteValue, intValue, longValue, floatValue, doubleValue).forEach { number ->
-            assertThat(Amount(number, prefix).magnitude).isEquivalentAccordingToCompareTo(expectedMagnitude)
+            Truth.assertThat(Amount(number, prefix).magnitude).isEquivalentAccordingToCompareTo(expectedMagnitude)
             if (prefix.power == 0) {
-                assertThat(Amount(number).magnitude).isEquivalentAccordingToCompareTo(expectedMagnitude)
+                Truth.assertThat(Amount(number).magnitude).isEquivalentAccordingToCompareTo(expectedMagnitude)
             }
         }
     }

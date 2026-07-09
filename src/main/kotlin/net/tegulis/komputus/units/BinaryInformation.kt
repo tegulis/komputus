@@ -23,8 +23,11 @@ import net.tegulis.komputus.prefixes.SI
  * - Convenience functions for octets and bytes use IEC prefix by default - as used when measuring (but not when
  *   advertising!) storage.
  *
- * @see Amount.prefixFilter
- * @see Amount.majorPrefixFilter
+ * Alignment does not switch units in this dimension ([Dimension.align] keeps its prefix-only default): whether an
+ * amount of information is displayed in bits or bytes is the caller's choice, not a question of magnitude.
+ *
+ * @see UnitOfMeasurement.prefixFilter
+ * @see Prefix.Companion.majorPrefixFilter
  * @see Prefix.isMajor
  */
 object BinaryInformation : Dimension {
@@ -32,94 +35,67 @@ object BinaryInformation : Dimension {
     override val baseUnit: UnitOfMeasurement
         get() = Byte
 
-    sealed class BinaryUnit(override val name: String, override val pluralName: String, override val symbol: String) :
-        UnitOfMeasurement {
+    sealed class BinaryUnit(
+        override val name: String,
+        override val pluralName: String,
+        override val symbol: String,
+        unitsInAByte: Int = 1,
+    ) : UnitOfMeasurement {
         override val dimension: Dimension
             get() = BinaryInformation
 
         override val prefixFilter: (Prefix) -> Boolean = Prefix.majorPrefixFilter
+        override val toBase: (BigDecimal) -> BigDecimal = { it.divideWithMathContext(unitsInAByte) }
+        override val fromBase: (BigDecimal) -> BigDecimal = { it.multiplyWithMathContext(unitsInAByte) }
     }
 
     const val BITS_IN_AN_OCTET = 8
-    const val BITS_IN_A_NIBBLE = 4
     const val NIBBLES_IN_AN_OCTET = 2
 
-    object Bit : BinaryUnit("bit", "bits", "b") {
-        override val conversions: Set<UnitConversion> by lazy {
-            setOf(
-                Nibble to { it.divideWithMathContext(BITS_IN_A_NIBBLE) },
-                Byte to { it.divideWithMathContext(BITS_IN_AN_OCTET) },
-                Octet to { it.divideWithMathContext(BITS_IN_AN_OCTET) },
-            )
-        }
-    }
+    object Bit : BinaryUnit("bit", "bits", "b", BITS_IN_AN_OCTET)
 
-    object Nibble : BinaryUnit("nibble", "nibbles", "") {
-        override val conversions: Set<UnitConversion> by lazy {
-            setOf(
-                Bit to { it.multiplyWithMathContext(BITS_IN_A_NIBBLE) },
-                Byte to { it.divideWithMathContext(NIBBLES_IN_AN_OCTET) },
-                Octet to { it.divideWithMathContext(NIBBLES_IN_AN_OCTET) },
-            )
-        }
-    }
+    object Nibble : BinaryUnit("nibble", "nibbles", "", NIBBLES_IN_AN_OCTET)
 
     /** See: https://en.wikipedia.org/wiki/Octet_(computing) */
-    object Octet : BinaryUnit("octet", "octets", "o") {
-        override val conversions: Set<UnitConversion> by lazy {
-            setOf(
-                Bit to { it.multiplyWithMathContext(BITS_IN_AN_OCTET) },
-                Nibble to { it.multiplyWithMathContext(NIBBLES_IN_AN_OCTET) },
-                Byte to { it },
-            )
-        }
-    }
+    object Octet : BinaryUnit("octet", "octets", "o")
 
-    object Byte : BinaryUnit("byte", "bytes", "B") {
-        override val conversions: Set<UnitConversion> by lazy {
-            setOf(
-                Bit to { it.multiplyWithMathContext(BITS_IN_AN_OCTET) },
-                Nibble to { it.multiplyWithMathContext(NIBBLES_IN_AN_OCTET) },
-                Octet to { it },
-            )
-        }
-    }
+    object Byte : BinaryUnit("byte", "bytes", "B")
 }
 
 //
 // Convenience functions for creating time amounts
 //
 
-fun Amount.Companion.ofBits(bits: Number, prefix: Prefix = SI.noScalingPrefix): Amount =
+fun Amount.Companion.ofBits(bits: Number, prefix: Prefix = SI.defaultNotScalingPrefix): Amount =
     BinaryInformation.Bit.amountOf(bits, prefix)
 
-fun Amount.Companion.ofBits(bits: BigDecimal, prefix: Prefix = SI.noScalingPrefix): Amount =
+fun Amount.Companion.ofBits(bits: BigDecimal, prefix: Prefix = SI.defaultNotScalingPrefix): Amount =
     BinaryInformation.Bit.amountOf(bits, prefix)
 
-fun Amount.Companion.ofNibbles(nibbles: Number, prefix: Prefix = SI.noScalingPrefix): Amount =
+fun Amount.Companion.ofNibbles(nibbles: Number, prefix: Prefix = SI.defaultNotScalingPrefix): Amount =
     BinaryInformation.Nibble.amountOf(nibbles, prefix)
 
-fun Amount.Companion.ofNibbles(nibbles: BigDecimal, prefix: Prefix = SI.noScalingPrefix): Amount =
+fun Amount.Companion.ofNibbles(nibbles: BigDecimal, prefix: Prefix = SI.defaultNotScalingPrefix): Amount =
     BinaryInformation.Nibble.amountOf(nibbles, prefix)
 
-fun Amount.Companion.ofOctets(octets: Number, prefix: Prefix = IEC.noScalingPrefix): Amount =
+fun Amount.Companion.ofOctets(octets: Number, prefix: Prefix = IEC.defaultNotScalingPrefix): Amount =
     BinaryInformation.Octet.amountOf(octets, prefix)
 
-fun Amount.Companion.ofOctets(octets: BigDecimal, prefix: Prefix = IEC.noScalingPrefix): Amount =
+fun Amount.Companion.ofOctets(octets: BigDecimal, prefix: Prefix = IEC.defaultNotScalingPrefix): Amount =
     BinaryInformation.Octet.amountOf(octets, prefix)
 
-fun Amount.Companion.ofBytes(bytes: Number, prefix: Prefix = IEC.noScalingPrefix): Amount =
+fun Amount.Companion.ofBytes(bytes: Number, prefix: Prefix = IEC.defaultNotScalingPrefix): Amount =
     BinaryInformation.Byte.amountOf(bytes, prefix)
 
-fun Amount.Companion.ofBytes(bytes: BigDecimal, prefix: Prefix = IEC.noScalingPrefix): Amount =
+fun Amount.Companion.ofBytes(bytes: BigDecimal, prefix: Prefix = IEC.defaultNotScalingPrefix): Amount =
     BinaryInformation.Byte.amountOf(bytes, prefix)
 
 //
 //  Convenience functions to create SI bits from Numbers
 //
-fun Number.toSiBits() = Amount.ofBits(this, SI.noScalingPrefix)
+fun Number.toSiBits() = Amount.ofBits(this, SI.defaultNotScalingPrefix)
 
-fun BigDecimal.toSiBits() = Amount.ofBits(this, SI.noScalingPrefix)
+fun BigDecimal.toSiBits() = Amount.ofBits(this, SI.defaultNotScalingPrefix)
 
 fun Number.Qb() = Amount.ofBits(this, SI.QUETTA)
 
@@ -164,9 +140,9 @@ fun BigDecimal.kb() = Amount.ofBits(this, SI.KILO)
 //
 //  Convenience functions to create IEC bits from Numbers
 //
-fun Number.toIecBits() = Amount.ofBits(this, IEC.noScalingPrefix)
+fun Number.toIecBits() = Amount.ofBits(this, IEC.defaultNotScalingPrefix)
 
-fun BigDecimal.toIecBits() = Amount.ofBits(this, IEC.noScalingPrefix)
+fun BigDecimal.toIecBits() = Amount.ofBits(this, IEC.defaultNotScalingPrefix)
 
 fun Number.Kib() = Amount.ofBits(this, IEC.KIBI)
 
@@ -203,9 +179,9 @@ fun BigDecimal.Yib() = Amount.ofBits(this, IEC.YOBI)
 //
 //  Convenience functions to create SI bytes from Numbers
 //
-fun Number.toSiBytes() = Amount.ofBytes(this, SI.noScalingPrefix)
+fun Number.toSiBytes() = Amount.ofBytes(this, SI.defaultNotScalingPrefix)
 
-fun BigDecimal.toSiBytes() = Amount.ofBytes(this, SI.noScalingPrefix)
+fun BigDecimal.toSiBytes() = Amount.ofBytes(this, SI.defaultNotScalingPrefix)
 
 fun Number.QB() = Amount.ofBytes(this, SI.QUETTA)
 
@@ -258,9 +234,9 @@ fun BigDecimal.daB() = Amount.ofBytes(this, SI.DECA)
 //
 //  Convenience functions to create IEC bytes from Numbers
 //
-fun Number.toIecBytes() = Amount.ofBytes(this, IEC.noScalingPrefix)
+fun Number.toIecBytes() = Amount.ofBytes(this, IEC.defaultNotScalingPrefix)
 
-fun BigDecimal.toIecBytes() = Amount.ofBytes(this, IEC.noScalingPrefix)
+fun BigDecimal.toIecBytes() = Amount.ofBytes(this, IEC.defaultNotScalingPrefix)
 
 fun Number.KiB() = Amount.ofBytes(this, IEC.KIBI)
 

@@ -8,7 +8,7 @@ object IEC : PrefixGroup() {
     override val prefixes: List<Prefix> by lazy {
         listOf(NONE, KIBI, MEBI, GIBI, TEBI, PEBI, EXBI, ZEBI, YOBI, ROBI, QUEBI)
     }
-    override val noScalingPrefix: Prefix
+    override val defaultNotScalingPrefix: Prefix
         get() = NONE
 
     sealed class IECPrefix(override val symbol: String, override val power: Int) : Prefix() {

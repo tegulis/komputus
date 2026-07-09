@@ -14,19 +14,32 @@ interface UnitOfMeasurement {
     val prefixFilter: (Prefix) -> Boolean
         get() = { true }
 
-    val conversions: Set<UnitConversion>
+    /**
+     * Convert a magnitude expressed in this unit into the [dimension]'s [Dimension.baseUnit].
+     *
+     * Base units should be chosen so that [toBase] multiplies by a terminating decimal wherever possible: comparisons
+     * between amounts ([Amount.equals], [Amount.compareTo]) go through [toBase] and are exact when it is.
+     */
+    val toBase: (BigDecimal) -> BigDecimal
+        get() = { it }
+
+    /**
+     * Convert a magnitude expressed in the [dimension]'s [Dimension.baseUnit] into this unit.
+     *
+     * Inverse of [toBase]. Divisions with non-terminating decimal expansions are rounded to
+     * [Amount.defaultNonTerminatingPrecision], so round trips through [fromBase] can be approximate.
+     */
+    val fromBase: (BigDecimal) -> BigDecimal
+        get() = { it }
 
     fun amountOf(amount: Number, prefix: Prefix) = Amount(amount, prefix, this)
 
     fun amountOf(amount: BigDecimal, prefix: Prefix) = Amount(amount, prefix, this)
 }
 
-typealias UnitConversion = Pair<UnitOfMeasurement, (BigDecimal) -> BigDecimal>
-
 object NoUnit : UnitOfMeasurement {
     override val name: String = ""
     override val pluralName: String = ""
     override val symbol: String = ""
     override val dimension: Dimension = NoDimension
-    override val conversions: Set<UnitConversion> = emptySet()
 }
