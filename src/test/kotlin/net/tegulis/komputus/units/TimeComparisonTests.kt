@@ -1,8 +1,8 @@
 package net.tegulis.komputus.units
 
 import com.google.common.truth.Truth.assertThat
-import net.tegulis.komputus.amount.Amount
 import java.math.BigDecimal
+import net.tegulis.komputus.amount.Amount
 import net.tegulis.komputus.prefixes.SI
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test

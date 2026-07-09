@@ -19,9 +19,9 @@ class TimeAlignmentTests {
     @MethodSource("timeAlignments")
     @DisplayName("Time.align switches to the largest unit with a magnitude of at least one")
     fun `Time#align switches to the largest unit with a magnitude of at least one`(
-	    amount: Amount,
-	    expectedUnit: UnitOfMeasurement,
-	    expectedMagnitude: BigDecimal,
+        amount: Amount,
+        expectedUnit: UnitOfMeasurement,
+        expectedMagnitude: BigDecimal,
     ) {
         val aligned = amount.align()
         assertThat(aligned.unit).isEqualTo(expectedUnit)

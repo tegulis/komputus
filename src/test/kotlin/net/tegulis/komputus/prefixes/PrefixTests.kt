@@ -23,7 +23,7 @@ class PrefixGroupTests {
     @MethodSource(Parameters.PREFIX_GROUP_PROVIDER)
     @DisplayName("PrefixGroup.prefixes is ordered by power")
     fun `PrefixGroup#prefixes is ordered by power`(prefixGroup: PrefixGroup) {
-        assertThat(prefixGroup.prefixes).containsExactlyElementsIn(prefixGroup.prefixes.sortedBy { it.power })
+        assertThat(prefixGroup.prefixes).containsExactlyElementsIn(prefixGroup.prefixes.sortedBy { it.power }).inOrder()
     }
 
     @ParameterizedTest(name = "{0}")

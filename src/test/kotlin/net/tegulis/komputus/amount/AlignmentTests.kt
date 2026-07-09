@@ -7,7 +7,10 @@ import net.tegulis.komputus.prefixes.SI
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 
-/** Tests for prefix alignment without unit conventions. See [net.tegulis.komputus.units.TimeAlignmentTests] and [net.tegulis.komputus.units.BinaryAlignmentTests]. */
+/**
+ * Tests for prefix alignment without unit conventions. See [net.tegulis.komputus.units.TimeAlignmentTests] and
+ * [net.tegulis.komputus.units.BinaryAlignmentTests].
+ */
 class AlignmentTests {
 
     @Test
