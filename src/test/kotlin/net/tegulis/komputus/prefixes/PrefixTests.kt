@@ -5,7 +5,6 @@ import com.google.common.truth.Truth.assertWithMessage
 import java.math.BigDecimal
 import kotlin.math.abs
 import net.tegulis.komputus.toBigDecimalWithMathContext
-import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
@@ -14,28 +13,24 @@ class PrefixGroupTests {
 
     @ParameterizedTest(name = "{0}")
     @MethodSource(Parameters.PREFIX_GROUP_PROVIDER)
-    @DisplayName("PrefixGroup has at least one prefix")
     fun `PrefixGroup has at least one prefix`(prefixGroup: PrefixGroup) {
         assertThat(prefixGroup.prefixes).isNotEmpty()
     }
 
     @ParameterizedTest(name = "{0}")
     @MethodSource(Parameters.PREFIX_GROUP_PROVIDER)
-    @DisplayName("PrefixGroup.prefixes is ordered by power")
     fun `PrefixGroup#prefixes is ordered by power`(prefixGroup: PrefixGroup) {
         assertThat(prefixGroup.prefixes).containsExactlyElementsIn(prefixGroup.prefixes.sortedBy { it.power }).inOrder()
     }
 
     @ParameterizedTest(name = "{0}")
     @MethodSource(Parameters.PREFIX_GROUP_PROVIDER)
-    @DisplayName("PrefixGroup.prefixes contains PrefixGroup.noScalePrefix")
     fun `PrefixGroup#prefixes contains PrefixGroup#noScalePrefix`(prefixGroup: PrefixGroup) {
         assertThat(prefixGroup.prefixes).contains(prefixGroup.defaultNotScalingPrefix)
     }
 
     @ParameterizedTest(name = "{0}")
     @MethodSource(Parameters.PREFIX_GROUP_PROVIDER)
-    @DisplayName("prefix.prefixGroup == PrefixGroup for prefix in PrefixGroup.prefixes")
     fun `prefix#prefixGroup == PrefixGroup for prefix in PrefixGroup#prefixes`(prefixGroup: PrefixGroup) {
         prefixGroup.prefixes.forEach { prefix ->
             assertWithMessage("${prefix}.prefixGroup != $prefixGroup").that(prefix.prefixGroup).isEqualTo(prefixGroup)
@@ -54,7 +49,6 @@ class PrefixGroupTests {
 
     @ParameterizedTest(name = "{0}")
     @MethodSource(Parameters.PREFIX_PROVIDER)
-    @DisplayName("Prefix.value == Prefix.prefixGroup.magnitude ^ Prefix.power")
     fun `Prefix#value == Prefix#prefixGroup#magnitude ^ Prefix#power`(prefix: Prefix) {
         assertThat(prefix.value)
             .isEquivalentAccordingToCompareTo(

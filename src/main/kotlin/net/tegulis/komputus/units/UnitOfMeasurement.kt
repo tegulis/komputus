@@ -2,6 +2,7 @@ package net.tegulis.komputus.units
 
 import java.math.BigDecimal
 import net.tegulis.komputus.amount.Amount
+import net.tegulis.komputus.prefixes.NotScalingPrefix
 import net.tegulis.komputus.prefixes.Prefix
 
 /** Named [UnitOfMeasurement] so it does not collide with Kotlin's [Unit]. */
@@ -13,6 +14,16 @@ interface UnitOfMeasurement {
     /** Filters for the [Prefix]es that are customary with this unit (convention, not math). */
     val prefixFilter: (Prefix) -> Boolean
         get() = { true }
+
+    /**
+     * The prefix an amount takes on when it is reset to this unit without an explicit prefix - for example by
+     * [Amount.copy] (and therefore [Amount.convertTo] and the quotient operators) when the current prefix is not
+     * admitted by [prefixFilter]. It also fixes the [net.tegulis.komputus.prefixes.PrefixGroup] the amount then aligns
+     * within, so it decides SI-vs-IEC for a converted amount (e.g. a bandwidth cancelled to [Time.Second]s aligns in
+     * SI). Must be admitted by [prefixFilter].
+     */
+    val defaultPrefix: Prefix
+        get() = NotScalingPrefix
 
     /**
      * Convert a magnitude expressed in this unit into the [dimension]'s [Dimension.baseUnit].

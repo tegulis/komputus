@@ -3,7 +3,6 @@ package net.tegulis.komputus.units
 import com.google.common.truth.Truth.assertThat
 import net.tegulis.komputus.amount.Amount
 import net.tegulis.komputus.prefixes.IEC
-import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
@@ -14,7 +13,6 @@ class BinaryComparisonTests {
 
     @ParameterizedTest(name = "{0} == {1}")
     @MethodSource("equalPairs")
-    @DisplayName("Binary amounts are equal when their base magnitudes match")
     fun `binary amounts are equal when their base magnitudes match`(left: Amount, right: Amount) {
         assertThat(left).isEqualTo(right)
         assertThat(right).isEqualTo(left)
@@ -23,7 +21,6 @@ class BinaryComparisonTests {
     }
 
     @Test
-    @DisplayName("Amount.equals is prefix-insensitive")
     fun `Amount#equals is prefix-insensitive`() {
         val kibibyte = Amount(1, IEC.KIBI, BinaryInformation.Byte)
         val bytes = Amount(1024, IEC.NONE, BinaryInformation.Byte)
@@ -32,7 +29,6 @@ class BinaryComparisonTests {
     }
 
     @Test
-    @DisplayName("Amount.compareTo orders amounts across binary units")
     fun `Amount#compareTo orders amounts across binary units`() {
         assertThat(Amount.ofBits(7) < Amount.ofBytes(1)).isTrue()
         assertThat(Amount.ofBits(9) > Amount.ofBytes(1)).isTrue()
@@ -41,8 +37,7 @@ class BinaryComparisonTests {
     }
 
     @Test
-    @DisplayName("Sorting orders amounts of mixed binary units correctly")
-    fun `sorting orders amounts of mixed binary units correctly`() {
+    fun `amounts of mixed binary units can be sorted correctly`() {
         val fourBits = Amount.ofBits(4)
         val oneByte = Amount.ofBytes(1)
         val threeNibbles = Amount.ofNibbles(3)
@@ -52,7 +47,6 @@ class BinaryComparisonTests {
     }
 
     @Test
-    @DisplayName("Amount.compareTo throws for different dimensions")
     fun `Amount#compareTo throws for different dimensions`() {
         assertThrows<IllegalArgumentException> { Amount.ofBytes(5).compareTo(Amount.ofSeconds(5)) }
     }
@@ -62,8 +56,8 @@ class BinaryComparisonTests {
         fun equalPairs(): List<Arguments> =
             listOf(
                 Arguments.of(Amount.ofBits(8), Amount.ofBytes(1)),
-                Arguments.of(Amount.ofNibbles(2), Amount.ofBytes(1)),
                 Arguments.of(Amount.ofOctets(1), Amount.ofBytes(1)),
+                Arguments.of(Amount.ofNibbles(2), Amount.ofBytes(1)),
                 Arguments.of(Amount.ofBits(4), Amount.ofNibbles(1)),
                 Arguments.of(Amount.ofBits(0), Amount.ofBytes(0)),
             )

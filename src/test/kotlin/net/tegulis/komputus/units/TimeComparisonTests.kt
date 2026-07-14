@@ -4,7 +4,6 @@ import com.google.common.truth.Truth.assertThat
 import java.math.BigDecimal
 import net.tegulis.komputus.amount.Amount
 import net.tegulis.komputus.prefixes.SI
-import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
@@ -15,7 +14,6 @@ class TimeComparisonTests {
 
     @ParameterizedTest(name = "{0} == {1}")
     @MethodSource("equalPairs")
-    @DisplayName("Time amounts are equal when their base magnitudes match")
     fun `time amounts are equal when their base magnitudes match`(left: Amount, right: Amount) {
         assertThat(left).isEqualTo(right)
         assertThat(right).isEqualTo(left)
@@ -24,7 +22,6 @@ class TimeComparisonTests {
     }
 
     @Test
-    @DisplayName("Amount.equals is scale-insensitive and prefix-insensitive")
     fun `Amount#equals is scale-insensitive and prefix-insensitive`() {
         val seconds = Amount.ofSeconds(BigDecimal("1500"))
         val fractionalSeconds = Amount.ofSeconds(BigDecimal("1500.00"))
@@ -36,7 +33,6 @@ class TimeComparisonTests {
     }
 
     @Test
-    @DisplayName("Amounts of different dimensions are not equal and equals does not throw")
     fun `amounts of different dimensions are not equal and equals does not throw`() {
         val fiveSeconds = Amount.ofSeconds(5)
         assertThat(fiveSeconds).isNotEqualTo(Amount.ofBytes(5))
@@ -46,7 +42,6 @@ class TimeComparisonTests {
     }
 
     @Test
-    @DisplayName("Amount.compareTo orders amounts across time units")
     fun `Amount#compareTo orders amounts across time units`() {
         assertThat(Amount.ofSeconds(59) < Amount.ofMinutes(1)).isTrue()
         assertThat(Amount.ofSeconds(61) > Amount.ofMinutes(1)).isTrue()
@@ -55,7 +50,6 @@ class TimeComparisonTests {
     }
 
     @Test
-    @DisplayName("Sorting orders amounts of mixed time units correctly")
     fun `sorting orders amounts of mixed time units correctly`() {
         val thirtySeconds = Amount.ofSeconds(30)
         val twoMinutes = Amount.ofMinutes(2)
@@ -66,7 +60,6 @@ class TimeComparisonTests {
     }
 
     @Test
-    @DisplayName("Amount.compareTo throws for different dimensions")
     fun `Amount#compareTo throws for different dimensions`() {
         assertThrows<IllegalArgumentException> { Amount.ofSeconds(5).compareTo(Amount.ofBytes(5)) }
         assertThrows<IllegalArgumentException> { Amount.ofSeconds(5) < Amount(5) }

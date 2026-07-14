@@ -6,7 +6,6 @@ import java.text.DecimalFormat
 import java.util.Locale
 import net.tegulis.komputus.amount.Amount
 import net.tegulis.komputus.prefixes.SI
-import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
@@ -17,7 +16,6 @@ class TimeAlignmentTests {
 
     @ParameterizedTest(name = "{0} aligns to {2} × {1}")
     @MethodSource("timeAlignments")
-    @DisplayName("Time.align switches to the largest unit with a magnitude of at least one")
     fun `Time#align switches to the largest unit with a magnitude of at least one`(
         amount: Amount,
         expectedUnit: UnitOfMeasurement,
@@ -29,7 +27,6 @@ class TimeAlignmentTests {
     }
 
     @Test
-    @DisplayName("Time.align falls back to prefix alignment below one minute")
     fun `Time#align falls back to prefix alignment below one minute`() {
         val aligned = Amount.ofSeconds(0.5).align()
         assertThat(aligned.unit).isEqualTo(Time.Second)
@@ -38,7 +35,6 @@ class TimeAlignmentTests {
     }
 
     @Test
-    @DisplayName("Amount.alignPrefix respects the second's prefix filter")
     fun `Amount#alignPrefix respects the second's prefix filter`() {
         // Seconds admit only major prefixes with power <= 0, so 5000 seconds stay at SI.NONE...
         val longTime = Amount(5000, SI.NONE, Time.Second).alignPrefix()
@@ -50,13 +46,11 @@ class TimeAlignmentTests {
     }
 
     @Test
-    @DisplayName("Time.align rejects amounts of other dimensions")
     fun `Time#align rejects amounts of other dimensions`() {
         assertThrows<IllegalArgumentException> { Time.align(Amount.ofBytes(5)) }
     }
 
     @Test
-    @DisplayName("Aligned time amounts format naturally")
     fun `aligned time amounts format naturally`() {
         val numberFormat = DecimalFormat.getInstance(Locale.US).apply { maximumFractionDigits = 2 }
         assertThat(Amount.ofSeconds(3600).align().format(numberFormat)).isEqualTo("1 h")

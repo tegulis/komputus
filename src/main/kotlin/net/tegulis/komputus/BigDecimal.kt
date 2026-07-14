@@ -36,21 +36,23 @@ fun BigDecimal.divideWithMathContext(divisor: Number): BigDecimal =
     }
 
 fun BigDecimal.multiplyWithMathContext(multiplier: Number): BigDecimal =
-    this.multiply(multiplier.toBigDecimalWithMathContext())
+    if (multiplier == 1) return this else this.multiply(multiplier.toBigDecimalWithMathContext())
 
 /**
  * Multiply with the given [Prefix]'s multiplier value ([Prefix.value]) using [multiplyWithMathContext].
  *
  * @param prefix The prefix to multiply with.
  */
-fun BigDecimal.multiplyWithPrefix(prefix: Prefix): BigDecimal = this.multiplyWithMathContext(prefix.value)
+fun BigDecimal.multiplyWithPrefix(prefix: Prefix): BigDecimal =
+    if (prefix.isNotScaling) return this else this.multiplyWithMathContext(prefix.value)
 
 /**
  * Divide with the given [Prefix]'s multiplier value ([Prefix.value]) using [divideWithMathContext].
  *
  * @param prefix The prefix to multiply with.
  */
-fun BigDecimal.divideWithPrefix(prefix: Prefix): BigDecimal = this.divideWithMathContext(prefix.value)
+fun BigDecimal.divideWithPrefix(prefix: Prefix): BigDecimal =
+    if (prefix.isNotScaling) return this else this.divideWithMathContext(prefix.value)
 
 /** Convenience function to format a [BigDecimal] using [Amount.defaultNumberFormatProvider]. */
 fun BigDecimal.format(numberFormat: NumberFormat = Amount.defaultNumberFormatProvider()): String =

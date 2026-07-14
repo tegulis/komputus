@@ -4,13 +4,13 @@ import com.google.common.truth.Truth.assertThat
 import java.text.DecimalFormat
 import java.util.Locale
 import net.tegulis.komputus.prefixes.NotScalingPrefix
+import net.tegulis.komputus.prefixes.SI
 import net.tegulis.komputus.units.Dimension
 import net.tegulis.komputus.units.NoDimension
 import net.tegulis.komputus.units.UnitOfMeasurement
-import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 
-class FormatTests {
+class FormattingTests {
 
     object NoSymbolTestUnit : UnitOfMeasurement {
         override val name: String = "test"
@@ -20,7 +20,6 @@ class FormatTests {
     }
 
     @Test
-    @DisplayName("UnitOfMeasurement.name and .pluralName are used when .symbol is blank")
     fun `UnitOfMeasurement#name and #pluralName are used when #symbol is blank`() {
         val preciseNumberFormat =
             DecimalFormat.getInstance().apply {
@@ -56,7 +55,6 @@ class FormatTests {
     }
 
     @Test
-    @DisplayName("Values that do not display as one are plural")
     fun `values that do not display as one are plural`() {
         val numberFormat =
             DecimalFormat.getInstance(Locale.US).apply {
@@ -72,7 +70,6 @@ class FormatTests {
     }
 
     @Test
-    @DisplayName("format() supports locales with grouping and comma decimal separators")
     fun `format() supports locales with grouping and comma decimal separators`() {
         val usNumberFormat = DecimalFormat.getInstance(Locale.US).apply { maximumFractionDigits = 2 }
         val germanNumberFormat = DecimalFormat.getInstance(Locale.GERMANY).apply { maximumFractionDigits = 2 }
@@ -85,7 +82,18 @@ class FormatTests {
     }
 
     @Test
-    @DisplayName("toString() supports number formats with grouping separators")
+    fun `format() honours a prefix override without applying prefix filters`() {
+        val numberFormat = DecimalFormat.getInstance(Locale.US).apply { maximumFractionDigits = 3 }
+        val twoThousand = Amount(2000, NotScalingPrefix, NoSymbolTestUnit)
+        // The stored value is unchanged; only its displayed scaling and prefix symbol change
+        assertThat(twoThousand.format(numberFormat, prefix = SI.KILO)).isEqualTo("2 k tests")
+        assertThat(twoThousand.format(numberFormat, prefix = SI.MEGA)).isEqualTo("0.002 M tests")
+        // Plurality follows the displayed value: forced to display as one, so singular
+        assertThat(Amount(1000, NotScalingPrefix, NoSymbolTestUnit).format(numberFormat, prefix = SI.KILO))
+            .isEqualTo("1 k test")
+    }
+
+    @Test
     fun `toString() supports number formats with grouping separators`() {
         val originalProvider = Amount.defaultNumberFormatProvider
         try {

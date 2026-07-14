@@ -626,6 +626,14 @@ object Currency : Dimension {
 
 // TODO: Generate this code with something like JavaPoet (for Kotlin)
 
+fun Amount.Companion.ofMoney(value: Number): Amount = Currency.MONEY.amountOf(value, NotScalingPrefix)
+
+fun Amount.Companion.ofMoney(value: BigDecimal): Amount = Currency.MONEY.amountOf(value, NotScalingPrefix)
+
+fun Number.money() = Amount.ofMoney(this)
+
+fun BigDecimal.money() = Amount.ofMoney(this)
+
 fun Amount.Companion.ofCAD(value: Number): Amount = Currency.CAD.amountOf(value, NotScalingPrefix)
 
 fun Amount.Companion.ofCAD(value: BigDecimal): Amount = Currency.CAD.amountOf(value, NotScalingPrefix)

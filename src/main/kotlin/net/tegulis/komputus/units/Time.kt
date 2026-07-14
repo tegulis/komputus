@@ -22,6 +22,10 @@ import net.tegulis.komputus.prefixes.SI
  * @see Prefix.Companion.majorPrefixFilter
  * @see Prefix.isMajor
  *
+ * Months and years are intentionally not units: they are not fixed lengths (28-31 days, leap years). Calendar
+ * arithmetic belongs to the Java Date and Time API - compute a [java.time.Period]'s actual span there and bridge it
+ * with the [java.time.Duration] conversions.
+ *
  * Conversions to and from [java.time.Duration] and [kotlin.time.Duration] are provided in
  * net.tegulis.komputus.Duration.kt ([net.tegulis.komputus.toAmount], [net.tegulis.komputus.toJavaDuration],
  * [net.tegulis.komputus.toKotlinDuration]).
@@ -29,7 +33,7 @@ import net.tegulis.komputus.prefixes.SI
  * TODO: Implement convenience functions to convert between [Amount] and [java.time.Period]
  */
 object Time : Dimension {
-    override val units: List<UnitOfMeasurement> by lazy { listOf(Second, Minute, Hour, Day, Week) }
+    override val units: List<TimeUnit> by lazy { listOf(Second, Minute, Hour, Day, Week) }
     override val baseUnit: UnitOfMeasurement
         get() = Second
 
@@ -59,6 +63,7 @@ object Time : Dimension {
 
     object Second : TimeUnit("second", "seconds", "s") {
         override val prefixFilter: (Prefix) -> Boolean = { it.power <= 0 && it.isMajor }
+        override val defaultPrefix: Prefix = SI.NONE
     }
 
     object Minute : TimeUnit("minute", "minutes", "min", SECONDS_IN_A_MINUTE)
@@ -92,6 +97,8 @@ object Time : Dimension {
 // Convenience functions for creating time amounts
 //
 
+// TODO: Generate this code with something like JavaPoet (for Kotlin)
+
 fun Amount.Companion.ofSeconds(seconds: Number, prefix: Prefix = SI.defaultNotScalingPrefix): Amount =
     Time.Second.amountOf(seconds, prefix)
 
@@ -120,3 +127,27 @@ fun Amount.Companion.ofWeeks(weeks: Number, prefix: Prefix = NotScalingPrefix): 
 
 fun Amount.Companion.ofWeeks(weeks: BigDecimal, prefix: Prefix = NotScalingPrefix): Amount =
     Time.Week.amountOf(weeks, prefix)
+
+//
+// Convenience functions to create time amounts from Numbers
+//
+
+fun Number.seconds() = Amount.ofSeconds(this)
+
+fun BigDecimal.seconds() = Amount.ofSeconds(this)
+
+fun Number.minutes() = Amount.ofMinutes(this)
+
+fun BigDecimal.minutes() = Amount.ofMinutes(this)
+
+fun Number.hours() = Amount.ofHours(this)
+
+fun BigDecimal.hours() = Amount.ofHours(this)
+
+fun Number.days() = Amount.ofDays(this)
+
+fun BigDecimal.days() = Amount.ofDays(this)
+
+fun Number.weeks() = Amount.ofWeeks(this)
+
+fun BigDecimal.weeks() = Amount.ofWeeks(this)

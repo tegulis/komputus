@@ -11,7 +11,6 @@ import net.tegulis.komputus.divideWithMathContext
 import net.tegulis.komputus.divideWithPrefix
 import net.tegulis.komputus.multiplyWithMathContext
 import net.tegulis.komputus.multiplyWithPrefix
-import net.tegulis.komputus.prefixes.NotScalingPrefix
 import net.tegulis.komputus.prefixes.Prefix
 import net.tegulis.komputus.prefixes.PrefixGroup
 import net.tegulis.komputus.toBigDecimalWithMathContext
@@ -30,7 +29,7 @@ import net.tegulis.komputus.units.UnitOfMeasurement
  * - [getScaledValue] to get the value in the desired [Prefix]
  * - [alignPrefix] to find the right [Prefix] to use for formatting the value
  * - [align] to optionally change the unit of measurement before aligning the [Prefix]
- * - [withPrefix] to create a copy of the instance with the desired new [Prefix]
+ * - [copy] to create a copy of the instance with modified values
  * - [format] (or [toString]) to format the amount using the currently set [Prefix] and [UnitOfMeasurement]
  *
  * The most powerful part of this class is comparisons and conversions:
@@ -68,38 +67,46 @@ class Amount : Comparable<Amount> {
      * @param unit the unit of measurement
      * @param raw if set to `true`, [magnitude] will be set to [value] without scaling
      */
-    constructor(
-        value: BigDecimal,
-        prefix: Prefix = NotScalingPrefix,
-        unit: UnitOfMeasurement = NoUnit,
-        raw: Boolean = false,
-    ) {
-        this.magnitude = if (raw) value else value.multiplyWithPrefix(prefix)
-        this.prefix = prefix
+    constructor(value: BigDecimal, prefix: Prefix? = null, unit: UnitOfMeasurement = NoUnit, raw: Boolean = false) {
+        this.magnitude = if (raw) value else value.multiplyWithPrefix(prefix ?: unit.defaultPrefix)
+        this.prefix = prefix ?: unit.defaultPrefix
         this.unit = unit
         this.baseMagnitude = unit.toBase(magnitude)
     }
 
     /**
      * Convenience constructor to make sure [Number]s are converted to [BigDecimal]s with [toBigDecimalWithMathContext].
-     * Equivalent to `Amount(value.toBigDecimalWithMathContext(), prefix, unit)`.
+     * Equivalent to `Amount(value.toBigDecimalWithMathContext(), prefix, unit, raw)`.
      */
     constructor(
         value: Number,
-        prefix: Prefix = NotScalingPrefix,
+        prefix: Prefix? = null,
         unit: UnitOfMeasurement = NoUnit,
         raw: Boolean = false,
     ) : this(value.toBigDecimalWithMathContext(), prefix, unit, raw)
 
     /**
      * Create a copy of this instance with the given [magnitude], [prefix] and [unit]. All parameters default to the
-     * current values of the instance.
+     * current values of the instance, except [prefix]:
+     * - if [prefix] is not `null` it is always set
+     * - if [unit] is unchanged, the current prefix is kept
+     * - if [unit] is changed and the [UnitOfMeasurement.prefixFilter] admits it, the current prefix is kept
+     * - otherwise, the default prefix of [unit] is used
      */
     fun copy(
         magnitude: BigDecimal = this.magnitude,
-        prefix: Prefix = this.prefix,
+        prefix: Prefix? = null,
         unit: UnitOfMeasurement = this.unit,
-    ): Amount = Amount(magnitude, prefix, unit, true)
+    ): Amount {
+        val newPrefix =
+            when {
+                prefix != null -> prefix
+                unit == this.unit -> this.prefix
+                unit.prefixFilter(this.prefix) -> this.prefix
+                else -> unit.defaultPrefix
+            }
+        return Amount(magnitude, newPrefix, unit, true)
+    }
 
     /**
      * Get the [magnitude] scaled with the current or desired prefix.
@@ -148,15 +155,21 @@ class Amount : Comparable<Amount> {
      * *displayed* value: the singular form is used exactly when the value formats to the same string as one does (e.g.
      * `1.0001` with two fraction digits displays as `1` and is singular).
      *
+     * Passing [prefix] overrides the prefix used for scaling and display without creating a new instance, so a value
+     * can be forced into a specific prefix (e.g. format bits as kilobits with `format(prefix = SI.KILO)`). The override
+     * is not filtered by [UnitOfMeasurement.prefixFilter]: any prefix is honoured.
+     *
      * @param numberFormat The [DecimalFormat] used to format the amount.
      * @param prefixAndUnitFormatString The [String.format] used to format the amount, prefix, and unit.
+     * @param prefix The prefix to scale and display the value with; defaults to this amount's [prefix].
      * @return The full formatting of this amount without aligning the prefix first.
      */
     fun format(
         numberFormat: NumberFormat = defaultNumberFormatProvider(),
         prefixAndUnitFormatString: String = defaultPrefixAndUnitFormatString,
+        prefix: Prefix = this.prefix,
     ): String {
-        val scaledValue = getScaledValue()
+        val scaledValue = getScaledValue(prefix)
         val formattedValue = numberFormat.format(scaledValue)
         val unitSymbolPadding = if (prefix.symbol.isNotBlank()) " " else ""
         var unitSymbol = unit.symbol
@@ -219,7 +232,7 @@ class Amount : Comparable<Amount> {
      *
      * @throws IllegalArgumentException if the dimensions differ
      */
-    fun convertTo(newUnit: UnitOfMeasurement = this.unit): Amount {
+    fun convertTo(newUnit: UnitOfMeasurement): Amount {
         if (newUnit == this.unit) {
             return this
         }
@@ -227,15 +240,7 @@ class Amount : Comparable<Amount> {
             "Cannot convert between dimensions: ${this.unit.dimension} (${this.unit.name}) and " +
                 "${newUnit.dimension} (${newUnit.name})"
         }
-        return if (newUnit.prefixFilter(prefix)) {
-            copy(magnitude = newUnit.fromBase(baseMagnitude), unit = newUnit)
-        } else {
-            copy(
-                magnitude = newUnit.fromBase(baseMagnitude),
-                prefix = prefix.prefixGroup.defaultNotScalingPrefix,
-                unit = newUnit,
-            )
-        }
+        return copy(magnitude = newUnit.fromBase(baseMagnitude), unit = newUnit)
     }
 
     /**

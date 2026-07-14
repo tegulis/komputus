@@ -31,7 +31,7 @@ import net.tegulis.komputus.prefixes.SI
  * @see Prefix.isMajor
  */
 object BinaryInformation : Dimension {
-    override val units: List<UnitOfMeasurement> by lazy { listOf(Bit, Nibble, Byte) }
+    override val units: List<BinaryUnit> by lazy { listOf(Bit, Nibble, Octet, Byte) }
     override val baseUnit: UnitOfMeasurement
         get() = Byte
 
@@ -40,6 +40,7 @@ object BinaryInformation : Dimension {
         override val pluralName: String,
         override val symbol: String,
         unitsInAByte: Int = 1,
+        override val defaultPrefix: Prefix = IEC.NONE,
     ) : UnitOfMeasurement {
         override val dimension: Dimension
             get() = BinaryInformation
@@ -52,9 +53,10 @@ object BinaryInformation : Dimension {
     const val BITS_IN_AN_OCTET = 8
     const val NIBBLES_IN_AN_OCTET = 2
 
-    object Bit : BinaryUnit("bit", "bits", "b", BITS_IN_AN_OCTET)
+    // Bits and nibbles default to SI prefixes (networking); octets and bytes to IEC prefixes (storage).
+    object Bit : BinaryUnit("bit", "bits", "b", BITS_IN_AN_OCTET, SI.NONE)
 
-    object Nibble : BinaryUnit("nibble", "nibbles", "", NIBBLES_IN_AN_OCTET)
+    object Nibble : BinaryUnit("nibble", "nibbles", "", NIBBLES_IN_AN_OCTET, SI.NONE)
 
     /** See: https://en.wikipedia.org/wiki/Octet_(computing) */
     object Octet : BinaryUnit("octet", "octets", "o")
@@ -93,6 +95,9 @@ fun Amount.Companion.ofBytes(bytes: BigDecimal, prefix: Prefix = IEC.defaultNotS
 //
 //  Convenience functions to create SI bits from Numbers
 //
+
+// TODO: Generate this code with something like JavaPoet (for Kotlin)
+
 fun Number.toSiBits() = Amount.ofBits(this, SI.defaultNotScalingPrefix)
 
 fun BigDecimal.toSiBits() = Amount.ofBits(this, SI.defaultNotScalingPrefix)
