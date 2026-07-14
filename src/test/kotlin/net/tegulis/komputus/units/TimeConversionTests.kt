@@ -47,13 +47,15 @@ class TimeConversionTests {
 
     @Test
     fun `Amount#convertTo resets the prefix when the target unit does not admit it`() {
-        // Minutes only admit non-scaling prefixes, so SI.MILLI cannot be carried over: reset to Minute.defaultPrefix
+        // Minutes take no prefix at all, so SI.MILLI cannot be carried over: reset to Minute.defaultPrefix
         val fiveHundredMilliseconds = Amount(500, SI.MILLI, Time.Second)
         val inMinutes = fiveHundredMilliseconds.convertTo(Time.Minute)
         assertThat(inMinutes.prefix).isEqualTo(NotScalingPrefix)
         assertThat(inMinutes.magnitude).isEquivalentAccordingToCompareTo(BigDecimal("0.008333333333"))
-        // SI.NONE is admissible (non-scaling) and is carried over
-        assertThat(Amount.ofSeconds(90).convertTo(Time.Minute).prefix).isEqualTo(SI.NONE)
+        // Not even SI.NONE survives the conversion: minutes only ever carry NotScalingPrefix
+        assertThat(Amount.ofSeconds(90).convertTo(Time.Minute).prefix).isEqualTo(NotScalingPrefix)
+        // ...and the reverse holds for seconds, which only ever carry SI prefixes
+        assertThat(Amount.ofMinutes(1.5).convertTo(Time.Second).prefix).isEqualTo(SI.NONE)
     }
 
     @Test

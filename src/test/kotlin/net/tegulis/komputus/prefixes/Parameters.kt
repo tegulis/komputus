@@ -8,21 +8,26 @@ import org.junit.jupiter.params.provider.Arguments
 object Parameters {
     const val PREFIX_GROUP_PROVIDER = "net.tegulis.komputus.prefixes.Parameters#prefixGroupProvider"
 
-    @JvmStatic fun prefixGroupProvider(): List<PrefixGroup> = listOf(NotScalingPrefixGroup, SI, IEC)
+    @JvmStatic
+    fun prefixGroupProvider(): List<PrefixGroup> = listOf(NotScalingPrefixGroup, SI, IEC, ShortScale, LongScale)
 
     @Test
     fun `prefixGroupProvider() provides all prefix groups`() {
-        assertThat(prefixGroupProvider()).containsExactly(NotScalingPrefixGroup, SI, IEC)
+        assertThat(prefixGroupProvider()).containsExactly(NotScalingPrefixGroup, SI, IEC, ShortScale, LongScale)
     }
 
     const val PREFIX_PROVIDER = "net.tegulis.komputus.prefixes.Parameters#prefixProvider"
 
-    @JvmStatic fun prefixProvider(): List<Prefix> = NotScalingPrefixGroup.prefixes + SI.prefixes + IEC.prefixes
+    @JvmStatic
+    fun prefixProvider(): List<Prefix> =
+        NotScalingPrefixGroup.prefixes + SI.prefixes + IEC.prefixes + ShortScale.prefixes + LongScale.prefixes
 
     @Test
     fun `prefixProvider() provides all prefixes`() {
         assertThat(prefixProvider())
-            .containsExactlyElementsIn(NotScalingPrefixGroup.prefixes + SI.prefixes + IEC.prefixes)
+            .containsExactlyElementsIn(
+                NotScalingPrefixGroup.prefixes + SI.prefixes + IEC.prefixes + ShortScale.prefixes + LongScale.prefixes
+            )
     }
 
     const val PREFIX_AND_THEIR_SCALE_PROVIDER = "net.tegulis.komputus.prefixes.Parameters#prefixesAndTheirScales"
@@ -70,11 +75,35 @@ object Parameters {
             Arguments.of(SI.YOCTO, BigDecimal("1E-24")),
             Arguments.of(SI.RONTO, BigDecimal("1E-27")),
             Arguments.of(SI.QUECTO, BigDecimal("1E-30")),
+            // ShortScale prefixes: each new name is a thousand times the previous one
+            Arguments.of(ShortScale.NONE, BigDecimal("1")),
+            Arguments.of(ShortScale.THOUSAND, BigDecimal("1E3")),
+            Arguments.of(ShortScale.MILLION, BigDecimal("1E6")),
+            Arguments.of(ShortScale.BILLION, BigDecimal("1E9")),
+            Arguments.of(ShortScale.TRILLION, BigDecimal("1E12")),
+            Arguments.of(ShortScale.QUADRILLION, BigDecimal("1E15")),
+            Arguments.of(ShortScale.QUINTILLION, BigDecimal("1E18")),
+            Arguments.of(ShortScale.SEXTILLION, BigDecimal("1E21")),
+            Arguments.of(ShortScale.SEPTILLION, BigDecimal("1E24")),
+            Arguments.of(ShortScale.OCTILLION, BigDecimal("1E27")),
+            // LongScale prefixes: each new -illion is a million times the previous one, with -illiards in between
+            Arguments.of(LongScale.NONE, BigDecimal("1")),
+            Arguments.of(LongScale.THOUSAND, BigDecimal("1E3")),
+            Arguments.of(LongScale.MILLION, BigDecimal("1E6")),
+            Arguments.of(LongScale.MILLIARD, BigDecimal("1E9")),
+            Arguments.of(LongScale.BILLION, BigDecimal("1E12")),
+            Arguments.of(LongScale.BILLIARD, BigDecimal("1E15")),
+            Arguments.of(LongScale.TRILLION, BigDecimal("1E18")),
+            Arguments.of(LongScale.TRILLIARD, BigDecimal("1E21")),
+            Arguments.of(LongScale.QUADRILLION, BigDecimal("1E24")),
+            Arguments.of(LongScale.QUADRILLIARD, BigDecimal("1E27")),
         )
 
     @Test
     fun `prefixesWithTheirScale() provides all prefixes`() {
         assertThat(prefixesAndTheirScales().map { it.get()[0] })
-            .containsExactlyElementsIn(NotScalingPrefixGroup.prefixes + SI.prefixes + IEC.prefixes)
+            .containsExactlyElementsIn(
+                NotScalingPrefixGroup.prefixes + SI.prefixes + IEC.prefixes + ShortScale.prefixes + LongScale.prefixes
+            )
     }
 }

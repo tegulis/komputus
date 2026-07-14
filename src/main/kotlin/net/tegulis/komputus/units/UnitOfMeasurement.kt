@@ -43,9 +43,9 @@ interface UnitOfMeasurement {
     val fromBase: (BigDecimal) -> BigDecimal
         get() = { it }
 
-    fun amountOf(amount: Number, prefix: Prefix) = Amount(amount, prefix, this)
+    fun amountOf(amount: Number, prefix: Prefix = defaultPrefix) = Amount(amount, prefix, this)
 
-    fun amountOf(amount: BigDecimal, prefix: Prefix) = Amount(amount, prefix, this)
+    fun amountOf(amount: BigDecimal, prefix: Prefix = defaultPrefix) = Amount(amount, prefix, this)
 }
 
 object NoUnit : UnitOfMeasurement {

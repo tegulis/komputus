@@ -128,24 +128,27 @@ class Amount : Comparable<Amount> {
     fun align(): Amount = unit.dimension.align(this)
 
     /**
-     * Find the right prefix from the same [net.tegulis.komputus.prefixes.PrefixGroup], that scales this amount above
-     * zero, but below the next bigger prefix - and return a new amount with the new prefix.
+     * Find the right prefix from a [net.tegulis.komputus.prefixes.PrefixGroup], that scales this amount above zero, but
+     * below the next bigger prefix - and return a new amount with the new prefix.
      *
      * Prefixes are filtered according to the [unit]'s [UnitOfMeasurement.prefixFilter] unless a different filter is
-     * provided.
+     * provided. Alignment happens within the group of the current [prefix], unless the filter does not admit that
+     * prefix at all - then it happens within the group of the [unit]'s [UnitOfMeasurement.defaultPrefix], so an amount
+     * can never get stuck in a group that offers it no fitting prefix.
      */
     fun alignPrefix(prefixFilter: (Prefix) -> Boolean = unit.prefixFilter): Amount {
+        val groupPrefix = if (prefixFilter(prefix)) prefix else unit.defaultPrefix
         if (magnitude.abs().compareTo(BigDecimal.ZERO) == 0) {
-            if (prefix == prefix.prefixGroup.defaultNotScalingPrefix) return this
-            return copy(prefix = prefix.prefixGroup.defaultNotScalingPrefix)
+            if (prefix == groupPrefix.prefixGroup.defaultNotScalingPrefix) return this
+            return copy(prefix = groupPrefix.prefixGroup.defaultNotScalingPrefix)
         }
-        for (candidatePrefix in prefix.prefixGroup.prefixes.filter(prefixFilter).sortedByDescending { it.value }) {
+        for (candidatePrefix in groupPrefix.prefixGroup.prefixes.filter(prefixFilter).sortedByDescending { it.value }) {
             if (magnitude.divideWithPrefix(candidatePrefix).abs() >= BigDecimal.ONE) {
                 if (candidatePrefix == prefix) return this
                 return copy(prefix = candidatePrefix)
             }
         }
-        return this
+        return if (prefix == groupPrefix) this else copy(prefix = groupPrefix)
     }
 
     /**
@@ -163,6 +166,8 @@ class Amount : Comparable<Amount> {
      * @param prefixAndUnitFormatString The [String.format] used to format the amount, prefix, and unit.
      * @param prefix The prefix to scale and display the value with; defaults to this amount's [prefix].
      * @return The full formatting of this amount without aligning the prefix first.
+     *
+     * TODO: ability to change if unit symbol or name is used
      */
     fun format(
         numberFormat: NumberFormat = defaultNumberFormatProvider(),

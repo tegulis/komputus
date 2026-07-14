@@ -15,11 +15,15 @@ import net.tegulis.komputus.prefixes.SI
  * simpler version for measuring time compared to [java.time.Duration] or [java.time.Period].
  *
  * See why: https://en.wikipedia.org/wiki/Orders_of_magnitude_(time)
- * - Seconds align to major SI prefixes for values below 1 only.
- * - All other units have [NotScalingPrefix] by default.
+ * - Seconds align to major SI prefixes for values below 1 only, and admit no other prefix group.
+ * - All other units have [NotScalingPrefix] by default and never scale (there are no kilominutes).
+ *
+ * Because [Second] rejects every non-SI prefix, any time amount converted to seconds resets into the SI group and can
+ * therefore align down to milliseconds - even one that started in a group with no sub-one prefixes, such as
+ * `Amount.ofMinutes(0.001).align()`, which yields 60 ms.
  *
  * @see UnitOfMeasurement.prefixFilter
- * @see Prefix.Companion.majorPrefixFilter
+ * @see Prefix.Companion.isMajorPrefixFilter
  * @see Prefix.isMajor
  *
  * Months and years are intentionally not units: they are not fixed lengths (28-31 days, leap years). Calendar
@@ -46,7 +50,14 @@ object Time : Dimension {
         override val dimension: Dimension
             get() = Time
 
-        override val prefixFilter: (Prefix) -> Boolean = Prefix.notScalingPrefixFilter
+        /**
+         * Minutes, hours, days and weeks take no prefix at all - there are no kilominutes. [Second] overrides this.
+         *
+         * [NotScalingPrefix] is matched by identity rather than with [Prefix.Companion.isNotScalingPrefixFilter]: that
+         * would also admit the no-scaling prefix of the other groups (`SI.NONE`, `IEC.NONE`), which have no sub-one
+         * prefix for a time unit to scale with - so an amount could strand there and never align into milliseconds.
+         */
+        override val prefixFilter: (Prefix) -> Boolean = { it == NotScalingPrefix }
         override val toBase: (BigDecimal) -> BigDecimal = { it.multiplyWithMathContext(secondsPerUnit) }
         override val fromBase: (BigDecimal) -> BigDecimal = { it.divideWithMathContext(secondsPerUnit) }
     }
@@ -62,7 +73,15 @@ object Time : Dimension {
     const val SECONDS_IN_A_WEEK = SECONDS_IN_A_MINUTE * MINUTES_IN_A_WEEK
 
     object Second : TimeUnit("second", "seconds", "s") {
-        override val prefixFilter: (Prefix) -> Boolean = { it.power <= 0 && it.isMajor }
+        /**
+         * Seconds admit **only** [SI] prefixes, and only major ones that scale below one (milli, micro, nano, ...).
+         *
+         * Rejecting the other prefix groups is what makes sub-second alignment work: [NotScalingPrefix] (carried by
+         * minutes, hours, days and weeks) and [net.tegulis.komputus.prefixes.IEC] prefixes both belong to groups
+         * without sub-one prefixes, so an amount stuck in them could never align down to milliseconds. Because they are
+         * rejected here, converting to [Second] resets the prefix to [defaultPrefix] - and [SI] can scale down.
+         */
+        override val prefixFilter: (Prefix) -> Boolean = { it.prefixGroup == SI && it.power <= 0 && it.isMajor }
         override val defaultPrefix: Prefix = SI.NONE
     }
 

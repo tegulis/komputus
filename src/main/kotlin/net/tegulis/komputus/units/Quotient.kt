@@ -67,8 +67,8 @@ private fun UnitOfMeasurement.symbolInQuotient(): String = if (this is QuotientU
  * - Otherwise the result is a rate in the structural [QuotientUnit] of the two units, expressed per one unit of
  *   [other]: `100 Mb / 3 h` yields `33.33 Mb/h`.
  *
- * The prefix follows the library's carry-over policy, [Amount.copy]: kept when the result unit admits it, reset to the
- * prefix group's default otherwise.
+ * The prefix follows the library's carry-over policy, [Amount.copy]: kept when the result unit's
+ * [UnitOfMeasurement.prefixFilter] admits it, reset to that unit's [UnitOfMeasurement.defaultPrefix] otherwise.
  *
  * @throws ArithmeticException if [other] is zero
  */
@@ -89,8 +89,8 @@ operator fun Amount.div(other: Amount): Amount {
  * other an amount of its denominator dimension, e.g. `100 Mb/s * 2 min = 12 Gb` (in either order). All other products
  * would need a product dimension, which komputus deliberately does not model.
  *
- * The prefix follows the library's carry-over policy, [Amount.copy]: kept when the result unit admits it, reset to the
- * prefix group's default otherwise.
+ * The prefix follows the library's carry-over policy, [Amount.copy]: kept when the result unit's
+ * [UnitOfMeasurement.prefixFilter] admits it, reset to that unit's [UnitOfMeasurement.defaultPrefix] otherwise.
  *
  * @throws IllegalArgumentException if neither operand is a quotient matching the other's dimension
  */

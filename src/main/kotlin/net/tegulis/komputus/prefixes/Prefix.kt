@@ -31,8 +31,20 @@ abstract class Prefix {
     override fun toString(): String = """$prefixGroup.${this::class.simpleName ?: super.toString()}"""
 
     companion object {
-        val majorPrefixFilter: (Prefix) -> Boolean = { it.isMajor }
-        val notScalingPrefixFilter: (Prefix) -> Boolean = { it.isNotScaling }
+        /** Admits every [Prefix] that [isMajor]. */
+        val isMajorPrefixFilter: (Prefix) -> Boolean = { it.isMajor }
+
+        /**
+         * Admits every [Prefix] that [isNotScaling], i.e. whose [value] is one. That is [NotScalingPrefix], but *also*
+         * the no-scaling prefix of every *other* group: [SI.NONE], [IEC.NONE], [ShortScale.NONE], and so on.
+         *
+         * Beware: a unit that never scales usually wants to reject the foreign groups' no-scaling prefixes as well,
+         * because [Amount.alignPrefix] only searches within the group of the current prefix - so an amount admitted
+         * into a group that offers the unit nothing to scale with is stranded there. A unit that must stay in
+         * [NotScalingPrefixGroup] should match [NotScalingPrefix] by identity instead, the way
+         * [net.tegulis.komputus.units.Time.TimeUnit] does.
+         */
+        val isNotScalingPrefixFilter: (Prefix) -> Boolean = { it.isNotScaling }
 
         fun valueFromPowerOfMultiplier(multiplier: Int, power: Int): BigDecimal =
             when {

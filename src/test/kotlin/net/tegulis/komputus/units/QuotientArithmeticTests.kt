@@ -87,6 +87,10 @@ class QuotientArithmeticTests {
         assertThat(transferTime.unit).isSameInstanceAs(Time.Second)
         assertThat(transferTime).isEqualTo(Amount.ofSeconds(BigDecimal("858.9934592")))
         assertThat(transferTime.toJavaDuration()).isEqualTo(Duration.ofSeconds(858, 993_459_200))
+        // The IEC.GIBI prefix of the left operand is not admitted by Second, so the result resets into the SI group -
+        // which is what lets a sub-second transfer time align down to milliseconds
+        assertThat(transferTime.prefix).isSameInstanceAs(SI.NONE)
+        assertThat((1.MiB() / bandwidth).align().format(usNumberFormat())).isEqualTo("838.86 ms")
     }
 
     @Test

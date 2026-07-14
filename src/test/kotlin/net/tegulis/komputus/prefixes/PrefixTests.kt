@@ -47,6 +47,55 @@ class PrefixGroupTests {
         assertThat(IEC.prefixes.map { it.power }).containsExactlyElementsIn(0..10)
     }
 
+    @Test
+    fun `all ShortScale prefixes are defined`() {
+        // Nothing below one, so money never scales down
+        assertThat(ShortScale.prefixes.map { it.power }).containsExactlyElementsIn(0..27 step 3)
+        assertThat(ShortScale.prefixes.map { it.symbol })
+            .containsExactly(
+                "",
+                "thousand",
+                "million",
+                "billion",
+                "trillion",
+                "quadrillion",
+                "quintillion",
+                "sextillion",
+                "septillion",
+                "octillion",
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun `all LongScale prefixes are defined`() {
+        assertThat(LongScale.prefixes.map { it.power }).containsExactlyElementsIn(0..27 step 3)
+        assertThat(LongScale.prefixes.map { it.symbol })
+            .containsExactly(
+                "",
+                "thousand",
+                "million",
+                "milliard",
+                "billion",
+                "billiard",
+                "trillion",
+                "trilliard",
+                "quadrillion",
+                "quadrilliard",
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun `the scales agree up to a million and diverge above it`() {
+        assertThat(LongScale.MILLION.value).isEquivalentAccordingToCompareTo(ShortScale.MILLION.value)
+        // A long scale billion is a thousand times a short scale billion - the reason they are separate groups
+        assertThat(LongScale.BILLION.value)
+            .isEquivalentAccordingToCompareTo(ShortScale.BILLION.value.multiply(BigDecimal("1000")))
+        // 10^9 is a billion in the short scale, but a milliard in the long scale
+        assertThat(LongScale.MILLIARD.value).isEquivalentAccordingToCompareTo(ShortScale.BILLION.value)
+    }
+
     @ParameterizedTest(name = "{0}")
     @MethodSource(Parameters.PREFIX_PROVIDER)
     fun `Prefix#value == Prefix#prefixGroup#magnitude ^ Prefix#power`(prefix: Prefix) {

@@ -2,8 +2,10 @@ package net.tegulis.komputus.units
 
 import java.math.BigDecimal
 import net.tegulis.komputus.amount.Amount
-import net.tegulis.komputus.prefixes.NotScalingPrefix
+import net.tegulis.komputus.prefixes.LongScale
 import net.tegulis.komputus.prefixes.Prefix
+import net.tegulis.komputus.prefixes.ShortScale
+import net.tegulis.komputus.units.Currency.CurrencyUnit
 
 /**
  * Currency dimension and units.
@@ -12,10 +14,19 @@ import net.tegulis.komputus.prefixes.Prefix
  * [UnitOfMeasurement.toBase] and [UnitOfMeasurement.fromBase], so amounts of different currencies compare and convert
  * 1:1. In the future, currency pairs and their exchange rates can be loaded to define real conversions.
  *
- * Currencies use [NotScalingPrefix]: money is not scaled with prefixes.
+ * Currencies scale the way money is written, with [ShortScale] *or* [LongScale] prefixes: 1500 dollars align to 1.5
+ * thousand dollars. Both groups are admitted and [ShortScale] is the default, so an amount deliberately put into
+ * [LongScale] keeps aligning there. Money never scales down - neither group has sub-one prefixes, so there are no
+ * millidollars.
  *
  * TODO: All currencies have been imported from ISO 4217. A thorough review of the list is needed to ensure all
  *   currencies are correct and have proper naming and symbols.
+ * TODO: Formatting a scaled money amount is not right yet: [Amount.format] concatenates the prefix symbol with the unit
+ *   symbol, which is correct for every other dimension ("1.5 kb") but yields "1.5 millionUSD" for a written-out prefix.
+ *   Money also wants the multiplier next to the *value* ("1.5 million USD"). Fix this when Amount.format() is replaced
+ *   by an AmountFormatter (and possibly a CurrencyFormatter, which could also translate the prefix words per locale - a
+ *   Hungarian reader expects "milliárd", not "milliard" - and honour [CurrencyUnit.fractionDigits] and locale-specific
+ *   currency symbols).
  */
 object Currency : Dimension {
     override val units: List<CurrencyUnit> by lazy {
@@ -215,7 +226,13 @@ object Currency : Dimension {
         override val dimension: Dimension
             get() = Currency
 
-        override val prefixFilter: (Prefix) -> Boolean = Prefix.notScalingPrefixFilter
+        /**
+         * Money scales with the written scales only: no SI, no IEC, and no scaling down below one. Both the short and
+         * the long scale are admitted, so an amount deliberately put into [LongScale] keeps aligning there instead of
+         * being reset to the [ShortScale] default.
+         */
+        override val prefixFilter: (Prefix) -> Boolean = { it.prefixGroup == ShortScale || it.prefixGroup == LongScale }
+        override val defaultPrefix: Prefix = ShortScale.NONE
     }
 
     /** Generic money and the base unit of the dimension; the symbol is the generic currency sign. */
@@ -624,44 +641,12 @@ object Currency : Dimension {
 // Convenience functions for creating currency amounts
 //
 
-// TODO: Generate this code with something like JavaPoet (for Kotlin)
+fun Amount.Companion.ofMoney(value: Number, currency: CurrencyUnit = Currency.MONEY): Amount =
+    currency.amountOf(value, ShortScale.NONE)
 
-fun Amount.Companion.ofMoney(value: Number): Amount = Currency.MONEY.amountOf(value, NotScalingPrefix)
+fun Amount.Companion.ofMoney(value: BigDecimal, currency: CurrencyUnit = Currency.MONEY): Amount =
+    currency.amountOf(value, ShortScale.NONE)
 
-fun Amount.Companion.ofMoney(value: BigDecimal): Amount = Currency.MONEY.amountOf(value, NotScalingPrefix)
+fun Number.money(currency: CurrencyUnit = Currency.MONEY) = Amount.ofMoney(this, currency)
 
-fun Number.money() = Amount.ofMoney(this)
-
-fun BigDecimal.money() = Amount.ofMoney(this)
-
-fun Amount.Companion.ofCAD(value: Number): Amount = Currency.CAD.amountOf(value, NotScalingPrefix)
-
-fun Amount.Companion.ofCAD(value: BigDecimal): Amount = Currency.CAD.amountOf(value, NotScalingPrefix)
-
-fun Number.CAD() = Amount.ofCAD(this)
-
-fun BigDecimal.CAD() = Amount.ofCAD(this)
-
-fun Amount.Companion.ofEUR(value: Number): Amount = Currency.EUR.amountOf(value, NotScalingPrefix)
-
-fun Amount.Companion.ofEUR(value: BigDecimal): Amount = Currency.EUR.amountOf(value, NotScalingPrefix)
-
-fun Number.EUR() = Amount.ofEUR(this)
-
-fun BigDecimal.EUR() = Amount.ofEUR(this)
-
-fun Amount.Companion.ofGBP(value: Number): Amount = Currency.GBP.amountOf(value, NotScalingPrefix)
-
-fun Amount.Companion.ofGBP(value: BigDecimal): Amount = Currency.GBP.amountOf(value, NotScalingPrefix)
-
-fun Number.GBP() = Amount.ofGBP(this)
-
-fun BigDecimal.GBP() = Amount.ofGBP(this)
-
-fun Amount.Companion.ofUSD(value: Number): Amount = Currency.USD.amountOf(value, NotScalingPrefix)
-
-fun Amount.Companion.ofUSD(value: BigDecimal): Amount = Currency.USD.amountOf(value, NotScalingPrefix)
-
-fun Number.USD() = Amount.ofUSD(this)
-
-fun BigDecimal.USD() = Amount.ofUSD(this)
+fun BigDecimal.money(currency: CurrencyUnit = Currency.MONEY) = Amount.ofMoney(this, currency)

@@ -64,6 +64,6 @@ class AlignmentTests {
     fun `Amount#alignPrefix accepts a custom prefix filter`() {
         val amount = Amount(150, prefix = SI.NONE)
         assertThat(amount.alignPrefix().prefix).isEqualTo(SI.HECTO)
-        assertThat(amount.alignPrefix(Prefix.majorPrefixFilter).prefix).isEqualTo(SI.NONE)
+        assertThat(amount.alignPrefix(Prefix.isMajorPrefixFilter).prefix).isEqualTo(SI.NONE)
     }
 }

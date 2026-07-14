@@ -27,7 +27,7 @@ import net.tegulis.komputus.prefixes.SI
  * amount of information is displayed in bits or bytes is the caller's choice, not a question of magnitude.
  *
  * @see UnitOfMeasurement.prefixFilter
- * @see Prefix.Companion.majorPrefixFilter
+ * @see Prefix.Companion.isMajorPrefixFilter
  * @see Prefix.isMajor
  */
 object BinaryInformation : Dimension {
@@ -45,7 +45,7 @@ object BinaryInformation : Dimension {
         override val dimension: Dimension
             get() = BinaryInformation
 
-        override val prefixFilter: (Prefix) -> Boolean = Prefix.majorPrefixFilter
+        override val prefixFilter: (Prefix) -> Boolean = Prefix.isMajorPrefixFilter
         override val toBase: (BigDecimal) -> BigDecimal = { it.divideWithMathContext(unitsInAByte) }
         override val fromBase: (BigDecimal) -> BigDecimal = { it.multiplyWithMathContext(unitsInAByte) }
     }

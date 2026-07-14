@@ -5,6 +5,8 @@ import java.math.BigDecimal
 import java.text.DecimalFormat
 import java.util.Locale
 import net.tegulis.komputus.amount.Amount
+import net.tegulis.komputus.prefixes.IEC
+import net.tegulis.komputus.prefixes.NotScalingPrefix
 import net.tegulis.komputus.prefixes.SI
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -43,6 +45,35 @@ class TimeAlignmentTests {
         val shortTime = Amount(0.5, SI.NONE, Time.Second).alignPrefix()
         assertThat(shortTime.prefix).isEqualTo(SI.MILLI)
         assertThat(shortTime.getScaledValue()).isEquivalentAccordingToCompareTo(BigDecimal("500"))
+    }
+
+    @Test
+    fun `seconds admit SI prefixes only`() {
+        assertThat(Time.Second.prefixFilter(SI.NONE)).isTrue()
+        assertThat(Time.Second.prefixFilter(SI.MILLI)).isTrue()
+        // Scaling up, and minor prefixes, remain rejected
+        assertThat(Time.Second.prefixFilter(SI.KILO)).isFalse()
+        assertThat(Time.Second.prefixFilter(SI.CENTI)).isFalse()
+        // Other prefix groups are rejected, so converting to Second escapes them (see the alignment test below)
+        assertThat(Time.Second.prefixFilter(NotScalingPrefix)).isFalse()
+        assertThat(Time.Second.prefixFilter(IEC.NONE)).isFalse()
+    }
+
+    @Test
+    fun `Time#align reaches milliseconds from units outside the SI prefix group`() {
+        val numberFormat = DecimalFormat.getInstance(Locale.US).apply { maximumFractionDigits = 2 }
+        // Minutes carry NotScalingPrefix, whose group has no sub-one prefix to scale into. Second rejects that prefix,
+        // so converting resets it to Second.defaultPrefix (SI.NONE) - and SI can scale all the way down.
+        val fromMinutes = Amount.ofMinutes(0.001).align()
+        assertThat(fromMinutes.unit).isEqualTo(Time.Second)
+        assertThat(fromMinutes.prefix).isEqualTo(SI.MILLI)
+        assertThat(fromMinutes.getScaledValue()).isEquivalentAccordingToCompareTo(BigDecimal("60"))
+        assertThat(fromMinutes.format(numberFormat)).isEqualTo("60 ms")
+        // The Number extension yields the same amount
+        assertThat(0.001.minutes().align().format(numberFormat)).isEqualTo("60 ms")
+        // The same escape works from an hour, and from an amount stuck in the IEC group
+        assertThat(Amount.ofHours(0.0001).align().format(numberFormat)).isEqualTo("360 ms")
+        assertThat(Amount(0.5, IEC.NONE, Time.Second).align().format(numberFormat)).isEqualTo("500 ms")
     }
 
     @Test
