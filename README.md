@@ -122,6 +122,9 @@ changes the unit: the prefix is kept when the new unit's `prefixFilter` allows i
 
 Converting between dimensions throws an `IllegalArgumentException`.
 
+Conversion and comparison across units are shown together in
+[UnitConversions.kt](src/test/kotlin/net/tegulis/komputus/demos/UnitConversions.kt).
+
 #### Comparison
 
 Two amounts are equal when they have the same dimension and the same base magnitude, so `60.seconds()` equals
@@ -137,10 +140,12 @@ and throws an `IllegalArgumentException` for different dimensions, because there
 30.minutes() - 1.hours()  // -30 min
 90.seconds() * 2          // 180 s - a dimensionless factor
 90.seconds() / 2          // 45 s
--90.seconds()             // -90 s
+(-90).seconds()             // -90 s
 ```
 
 Adding or subtracting amounts of different dimensions throws an `IllegalArgumentException`.
+
+See [AmountArithmetics.kt](src/test/kotlin/net/tegulis/komputus/demos/AmountArithmetics.kt) for a runnable walk-through.
 
 #### Rates: dividing and multiplying amounts
 
@@ -178,6 +183,9 @@ equal to a named dimension that models the same physical quantity.
 
 Note that a rate carries a single prefix, and it scales the numerator: an amount of 100 with `SI.MEGA` in bits per
 second is written `100 Mb/s`.
+
+[UnitArithmetics.kt](src/test/kotlin/net/tegulis/komputus/demos/UnitArithmetics.kt) works through building and
+cancelling rates across units.
 
 #### Formatting
 
@@ -423,6 +431,12 @@ The demos under [src/test/kotlin/net/tegulis/komputus/demos](src/test/kotlin/net
 
 - [Amounts.kt](src/test/kotlin/net/tegulis/komputus/demos/Amounts.kt): SI against IEC prefixes, and the advertised
   capacity of a disk against its real one.
+- [AmountArithmetics.kt](src/test/kotlin/net/tegulis/komputus/demos/AmountArithmetics.kt): adding, subtracting, and
+  scaling amounts of the same dimension.
+- [UnitArithmetics.kt](src/test/kotlin/net/tegulis/komputus/demos/UnitArithmetics.kt): dividing and multiplying amounts
+  of different units to build and cancel rates.
+- [UnitConversions.kt](src/test/kotlin/net/tegulis/komputus/demos/UnitConversions.kt): converting and comparing between
+  different units of a dimension.
 - [BucketTransfer.kt](src/test/kotlin/net/tegulis/komputus/demos/BucketTransfer.kt): transfer time, monthly traffic, and
   storage cost, computed with rates.
 - [ForcedFormatting.kt](src/test/kotlin/net/tegulis/komputus/demos/ForcedFormatting.kt): forcing a unit and a prefix for
