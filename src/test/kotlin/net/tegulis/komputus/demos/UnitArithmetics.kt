@@ -16,7 +16,7 @@ import net.tegulis.komputus.units.times
 
 fun main() {
     // A fixed number format so the printed output matches the comments regardless of the default locale.
-    val format = DecimalFormat.getInstance(Locale.US).apply { maximumFractionDigits = 2 }
+    val format = DecimalFormat.getInstance(Locale.ROOT).apply { maximumFractionDigits = 2 }
 
     // 1. Dividing two amounts of DIFFERENT units builds a rate: a quotient unit that scales with its numerator.
     val bandwidth = 500.Mb() / 1.seconds()

@@ -5,6 +5,7 @@ import java.math.MathContext
 import java.math.RoundingMode
 import java.text.DecimalFormat
 import java.text.NumberFormat
+import java.util.Locale
 import java.util.Objects
 import net.tegulis.komputus.amount.Amount.Companion.defaultNonTerminatingPrecision
 import net.tegulis.komputus.divideWithMathContext
@@ -297,6 +298,9 @@ class Amount : Comparable<Amount> {
         /**
          * Provides a new instance of [NumberFormat] for default formatting.
          *
+         * The default uses [Locale.ROOT] so formatting does not depend on the machine's locale: it always groups with a
+         * comma and uses a dot for the decimal point. Replace this provider to format for a specific locale.
+         *
          * See the
          * [Synchronization section in NumberFormat](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/text/NumberFormat.html#synchronization):
          * > Number formats are generally not synchronized. It is recommended to create separate format instances for
@@ -305,7 +309,7 @@ class Amount : Comparable<Amount> {
          * See [NumberFormat] and [DecimalFormat].
          */
         var defaultNumberFormatProvider: () -> NumberFormat = {
-            DecimalFormat.getInstance().apply { maximumFractionDigits = 2 }
+            DecimalFormat.getInstance(Locale.ROOT).apply { maximumFractionDigits = 2 }
         }
         var defaultPrefixAndUnitFormatString: String = $$"%1$s %2$s%3$s"
         /*

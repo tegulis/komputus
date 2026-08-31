@@ -22,12 +22,12 @@ class FormattingTests {
     @Test
     fun `UnitOfMeasurement#name and #pluralName are used when #symbol is blank`() {
         val preciseNumberFormat =
-            DecimalFormat.getInstance().apply {
+            DecimalFormat.getInstance(Locale.ROOT).apply {
                 minimumFractionDigits = 0
                 maximumFractionDigits = 10
             }
         val lossyNumberFormat =
-            DecimalFormat.getInstance().apply {
+            DecimalFormat.getInstance(Locale.ROOT).apply {
                 minimumFractionDigits = 0
                 maximumFractionDigits = 0
             }
@@ -57,7 +57,7 @@ class FormattingTests {
     @Test
     fun `values that do not display as one are plural`() {
         val numberFormat =
-            DecimalFormat.getInstance(Locale.US).apply {
+            DecimalFormat.getInstance(Locale.ROOT).apply {
                 minimumFractionDigits = 0
                 maximumFractionDigits = 2
             }
@@ -83,7 +83,7 @@ class FormattingTests {
 
     @Test
     fun `format() honours a prefix override without applying prefix filters`() {
-        val numberFormat = DecimalFormat.getInstance(Locale.US).apply { maximumFractionDigits = 3 }
+        val numberFormat = DecimalFormat.getInstance(Locale.ROOT).apply { maximumFractionDigits = 3 }
         val twoThousand = Amount(2000, NotScalingPrefix, NoSymbolTestUnit)
         // The stored value is unchanged; only its displayed scaling and prefix symbol change
         assertThat(twoThousand.format(numberFormat, prefix = SI.KILO)).isEqualTo("2 k tests")
@@ -98,7 +98,7 @@ class FormattingTests {
         val originalProvider = Amount.defaultNumberFormatProvider
         try {
             Amount.defaultNumberFormatProvider = {
-                DecimalFormat.getInstance(Locale.US).apply { maximumFractionDigits = 2 }
+                DecimalFormat.getInstance(Locale.ROOT).apply { maximumFractionDigits = 2 }
             }
             assertThat(Amount(1500, NotScalingPrefix, NoSymbolTestUnit).toString()).isEqualTo("1,500 tests")
         } finally {

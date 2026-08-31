@@ -9,7 +9,7 @@ import net.tegulis.komputus.units.seconds
 
 fun main() {
     // A fixed number format so the printed output matches the comments regardless of the default locale.
-    val format = DecimalFormat.getInstance(Locale.US).apply { maximumFractionDigits = 2 }
+    val format = DecimalFormat.getInstance(Locale.ROOT).apply { maximumFractionDigits = 2 }
 
     // Adding and subtracting amounts of the SAME dimension.
     // The right side is converted to the LEFT side's unit first, so the left side decides the result unit and prefix.
@@ -24,6 +24,5 @@ fun main() {
     println(((-90).seconds()).format(format)) //    -90 s
 
     // Mixing dimensions is a mistake, and it is caught: adding storage to time throws.
-    runCatching { 1.hours() + 1.GB() }
-        .onFailure { println("1 h + 1 GB throws: ${it.message}") }
+    runCatching { 1.hours() + 1.GB() }.onFailure { println("1 h + 1 GB throws: ${it.message}") }
 }

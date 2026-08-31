@@ -17,7 +17,7 @@ import net.tegulis.komputus.units.seconds
 
 fun main() {
     // A fixed number format so the printed output matches the comments regardless of the default locale.
-    val format = DecimalFormat.getInstance(Locale.US).apply { maximumFractionDigits = 2 }
+    val format = DecimalFormat.getInstance(Locale.ROOT).apply { maximumFractionDigits = 2 }
 
     // 1. convertTo changes the unit within a dimension, going through the dimension's base unit.
     println(Amount.ofSeconds(90).convertTo(Time.Minute).format(format)) // 1.5 min
@@ -35,8 +35,7 @@ fun main() {
 
     // 3. Across dimensions, equals() never throws - it is simply false. compareTo() does throw.
     println(5.money() == Amount.ofSeconds(5)) // false
-    runCatching { 5.money() < Amount.ofSeconds(5) }
-        .onFailure { println("5 ¤ < 5 s throws: ${it.message}") }
+    runCatching { 5.money() < Amount.ofSeconds(5) }.onFailure { println("5 ¤ < 5 s throws: ${it.message}") }
 
     // 4. Currencies convert too, but only with the identity for now: there are no exchange rates yet, so every
     //    currency is treated as worth exactly one unit of money. 5 dollars therefore "equals" 5 euros.

@@ -15,7 +15,7 @@ import org.junit.jupiter.api.assertThrows
 class CurrencyTests {
 
     private fun getUsNumberFormat(): NumberFormat =
-        DecimalFormat.getInstance(Locale.US).apply { maximumFractionDigits = 2 }
+        DecimalFormat.getInstance(Locale.ROOT).apply { maximumFractionDigits = 2 }
 
     @Test
     fun `MONEY amounts use ShortScale by default`() {

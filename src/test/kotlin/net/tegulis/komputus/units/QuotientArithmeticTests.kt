@@ -18,7 +18,7 @@ import org.junit.jupiter.api.assertThrows
 class QuotientArithmeticTests {
 
     private fun usNumberFormat(): NumberFormat =
-        DecimalFormat.getInstance(Locale.US).apply { maximumFractionDigits = 2 }
+        DecimalFormat.getInstance(Locale.ROOT).apply { maximumFractionDigits = 2 }
 
     @Test
     fun `dividing 100 Mb by 3 hours creates a rate in megabits per hour`() {

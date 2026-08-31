@@ -13,7 +13,7 @@ import org.junit.jupiter.api.assertThrows
 class QuotientAlignmentTests {
 
     private fun usNumberFormat(): NumberFormat =
-        DecimalFormat.getInstance(Locale.US).apply { maximumFractionDigits = 2 }
+        DecimalFormat.getInstance(Locale.ROOT).apply { maximumFractionDigits = 2 }
 
     @Test
     fun `alignment finds the fitting prefix within the quotient unit`() {

@@ -61,7 +61,7 @@ class TimeAlignmentTests {
 
     @Test
     fun `Time#align reaches milliseconds from units outside the SI prefix group`() {
-        val numberFormat = DecimalFormat.getInstance(Locale.US).apply { maximumFractionDigits = 2 }
+        val numberFormat = DecimalFormat.getInstance(Locale.ROOT).apply { maximumFractionDigits = 2 }
         // Minutes carry NotScalingPrefix, whose group has no sub-one prefix to scale into. Second rejects that prefix,
         // so converting resets it to Second.defaultPrefix (SI.NONE) - and SI can scale all the way down.
         val fromMinutes = Amount.ofMinutes(0.001).align()
@@ -83,7 +83,7 @@ class TimeAlignmentTests {
 
     @Test
     fun `aligned time amounts format naturally`() {
-        val numberFormat = DecimalFormat.getInstance(Locale.US).apply { maximumFractionDigits = 2 }
+        val numberFormat = DecimalFormat.getInstance(Locale.ROOT).apply { maximumFractionDigits = 2 }
         assertThat(Amount.ofSeconds(3600).align().format(numberFormat)).isEqualTo("1 h")
         assertThat(Amount.ofSeconds(90).align().format(numberFormat)).isEqualTo("1.5 min")
         assertThat(Amount.ofSeconds(0.5).align().format(numberFormat)).isEqualTo("500 ms")
