@@ -33,6 +33,8 @@ dependencies {
     testRuntimeOnly(libs.junit.platform)
     // Google Truth
     testImplementation(libs.google.truth)
+    // KotlinPoet for the `generateSources` task
+    testImplementation(libs.kotlinpoet)
 }
 
 tasks.withType<Test> {
@@ -71,3 +73,19 @@ listOf("", "Main", "Scripts", "Test").forEach { taskName ->
 
 // Format code before compiling
 tasks.withType<KotlinCompile> { dependsOn("ktfmtFormat") }
+
+// Write sources that can be auto-generated
+// NOTE: This is deliberately NOT wired into compileKotlin. The generator reads the code, so making compilation depend
+// on it would be a task cycle: compileKotlin -> generateSources -> compileTestKotlin -> compileKotlin
+// The generated sources are committed instead, so a normal build never runs the generator.
+// The output is not formatted by this invocation. The next build will settle it.
+tasks.register<JavaExec>("generateSources") {
+    group = "build"
+    description = "Generates the repetitive unit helper functions into src/main/kotlin."
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass = "net.tegulis.komputus.codegen.MainKt"
+    // Run the generator on a matching JVM so it can load the compiled classes
+    javaLauncher = javaToolchains.launcherFor(java.toolchain)
+    // Output directory, relative to the working directory (the project directory).
+    args("src/main/kotlin")
+}
