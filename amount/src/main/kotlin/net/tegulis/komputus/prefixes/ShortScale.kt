@@ -10,7 +10,7 @@ import java.math.BigDecimal
  * In the short scale - the English-speaking world, and international finance - each new name is a thousand times the
  * previous one, so a billion is 10^9. [LongScale] names the very same magnitudes differently (its billion is 10^12),
  * which is why the two are separate [PrefixGroup]s rather than one shared set: [ShortScale.BILLION] and
- * [LongScale.BILLION] are not the same number, and nothing should let them be confused.
+ * [LongScale.BILLION] are different prefixes, and should not be confused.
  *
  * The symbols are the words themselves rather than letters, because the letters are ambiguous across dimensions ("B"
  * would be a billion here but a byte elsewhere). An AmountFormatter can translate them per locale.

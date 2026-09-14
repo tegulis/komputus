@@ -8,21 +8,29 @@ import net.tegulis.komputus.prefixes.IEC
 import net.tegulis.komputus.prefixes.Prefix
 import net.tegulis.komputus.prefixes.SI
 
-fun Amount.Companion.ofBits(bits: Number, prefix: Prefix = SI.defaultNotScalingPrefix): Amount = BinaryInformation.Bit.amountOf(bits, prefix)
+fun Amount.Companion.ofBits(bits: Number, prefix: Prefix = SI.defaultNotScalingPrefix): Amount =
+    BinaryInformation.Bit.amountOf(bits, prefix)
 
-fun Amount.Companion.ofBits(bits: BigDecimal, prefix: Prefix = SI.defaultNotScalingPrefix): Amount = BinaryInformation.Bit.amountOf(bits, prefix)
+fun Amount.Companion.ofBits(bits: BigDecimal, prefix: Prefix = SI.defaultNotScalingPrefix): Amount =
+    BinaryInformation.Bit.amountOf(bits, prefix)
 
-fun Amount.Companion.ofNibbles(nibbles: Number, prefix: Prefix = SI.defaultNotScalingPrefix): Amount = BinaryInformation.Nibble.amountOf(nibbles, prefix)
+fun Amount.Companion.ofNibbles(nibbles: Number, prefix: Prefix = SI.defaultNotScalingPrefix): Amount =
+    BinaryInformation.Nibble.amountOf(nibbles, prefix)
 
-fun Amount.Companion.ofNibbles(nibbles: BigDecimal, prefix: Prefix = SI.defaultNotScalingPrefix): Amount = BinaryInformation.Nibble.amountOf(nibbles, prefix)
+fun Amount.Companion.ofNibbles(nibbles: BigDecimal, prefix: Prefix = SI.defaultNotScalingPrefix): Amount =
+    BinaryInformation.Nibble.amountOf(nibbles, prefix)
 
-fun Amount.Companion.ofOctets(octets: Number, prefix: Prefix = IEC.defaultNotScalingPrefix): Amount = BinaryInformation.Octet.amountOf(octets, prefix)
+fun Amount.Companion.ofOctets(octets: Number, prefix: Prefix = IEC.defaultNotScalingPrefix): Amount =
+    BinaryInformation.Octet.amountOf(octets, prefix)
 
-fun Amount.Companion.ofOctets(octets: BigDecimal, prefix: Prefix = IEC.defaultNotScalingPrefix): Amount = BinaryInformation.Octet.amountOf(octets, prefix)
+fun Amount.Companion.ofOctets(octets: BigDecimal, prefix: Prefix = IEC.defaultNotScalingPrefix): Amount =
+    BinaryInformation.Octet.amountOf(octets, prefix)
 
-fun Amount.Companion.ofBytes(bytes: Number, prefix: Prefix = IEC.defaultNotScalingPrefix): Amount = BinaryInformation.Byte.amountOf(bytes, prefix)
+fun Amount.Companion.ofBytes(bytes: Number, prefix: Prefix = IEC.defaultNotScalingPrefix): Amount =
+    BinaryInformation.Byte.amountOf(bytes, prefix)
 
-fun Amount.Companion.ofBytes(bytes: BigDecimal, prefix: Prefix = IEC.defaultNotScalingPrefix): Amount = BinaryInformation.Byte.amountOf(bytes, prefix)
+fun Amount.Companion.ofBytes(bytes: BigDecimal, prefix: Prefix = IEC.defaultNotScalingPrefix): Amount =
+    BinaryInformation.Byte.amountOf(bytes, prefix)
 
 fun Number.toSiBits(): Amount = Amount.ofBits(this, SI.defaultNotScalingPrefix)
 
