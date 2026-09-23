@@ -2,7 +2,6 @@ package net.tegulis.komputus
 
 import java.math.BigDecimal
 import java.math.MathContext
-import java.text.NumberFormat
 import net.tegulis.komputus.amount.Amount
 import net.tegulis.komputus.prefixes.Prefix
 
@@ -53,7 +52,3 @@ fun BigDecimal.multiplyWithPrefix(prefix: Prefix): BigDecimal =
  */
 fun BigDecimal.divideWithPrefix(prefix: Prefix): BigDecimal =
     if (prefix.isNotScaling) return this else this.divideWithMathContext(prefix.value)
-
-/** Convenience function to format a [BigDecimal] using [Amount.defaultNumberFormatProvider]. */
-fun BigDecimal.format(numberFormat: NumberFormat = Amount.defaultNumberFormatProvider()): String =
-    numberFormat.format(this)

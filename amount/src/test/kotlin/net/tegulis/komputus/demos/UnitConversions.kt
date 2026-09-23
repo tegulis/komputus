@@ -1,7 +1,5 @@
 package net.tegulis.komputus.demos
 
-import java.text.DecimalFormat
-import java.util.Locale
 import net.tegulis.komputus.amount.Amount
 import net.tegulis.komputus.prefixes.IEC
 import net.tegulis.komputus.prefixes.SI
@@ -16,15 +14,12 @@ import net.tegulis.komputus.units.ofSeconds
 import net.tegulis.komputus.units.seconds
 
 fun main() {
-    // A fixed number format so the printed output matches the comments regardless of the default locale.
-    val format = DecimalFormat.getInstance(Locale.ROOT).apply { maximumFractionDigits = 2 }
-
     // 1. convertTo changes the unit within a dimension, going through the dimension's base unit.
-    println(Amount.ofSeconds(90).convertTo(Time.Minute).format(format)) // 1.5 min
-    println(Amount.ofBytes(1000).convertTo(BinaryInformation.Bit).format(format)) // 8,000 b
+    println(Amount.ofSeconds(90).convertTo(Time.Minute).format()) // 1.5 min
+    println(Amount.ofBytes(1000).convertTo(BinaryInformation.Bit).format()) // 8,000 b
 
     // align() also converts, but it CHOOSES the unit a human would write.
-    println(Amount.ofSeconds(3600).align().format(format)) // 1 h
+    println(Amount.ofSeconds(3600).align().format()) // 1 h
 
     // 2. Amounts compare by their value in the base unit, so different units compare correctly.
     println(60.seconds() == 1.minutes()) // true - 60 s and 1 min are the same amount
@@ -39,6 +34,6 @@ fun main() {
 
     // 4. Currencies convert too, but only with the identity for now: there are no exchange rates yet, so every
     //    currency is treated as worth exactly one unit of money. 5 dollars therefore "equals" 5 euros.
-    println(5.money(USD).convertTo(EUR).format(format)) // 5 EUR
+    println(5.money(USD).convertTo(EUR).format()) // 5.00 EUR
     println(5.money(USD) == 5.money(EUR)) // true (for now) - see the exchange-rate note
 }

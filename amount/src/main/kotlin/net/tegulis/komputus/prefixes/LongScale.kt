@@ -7,7 +7,7 @@ import java.math.BigDecimal
  *
  * See: https://en.wikipedia.org/wiki/Long_and_short_scales
  *
- * In the long scale - continental Europe (including Hungary), Latin America and much of the rest of the world - each
+ * In the long scale - continental Europe (including Hungary), Latin America, and much of the rest of the world - each
  * new *-illion* is a million times the previous one, and the halfway steps are the *-illiards*. A billion is therefore
  * 10^12, not 10^9.
  *
@@ -22,7 +22,7 @@ import java.math.BigDecimal
  * | 10^15    | quadrillion  | billiard    |
  * | 10^18    | quintillion  | trillion    |
  *
- * The symbols are the words themselves rather than letters; an AmountFormatter can translate them per locale.
+ * The symbols are the words themselves rather than letters.
  *
  * Only non-negative powers are defined, so money never scales *down*: there are no millidollars, and aligning 0.5
  * dollars leaves it at [NONE].
@@ -35,10 +35,11 @@ object LongScale : PrefixGroup() {
     override val defaultNotScalingPrefix: Prefix
         get() = NONE
 
-    sealed class LongScalePrefix(override val symbol: String, override val power: Int) : Prefix() {
+    sealed class LongScalePrefix(override val name: String, override val power: Int) : Prefix() {
         override val prefixGroup: PrefixGroup
             get() = LongScale
 
+        override val symbol: String = name
         override val value: BigDecimal = valueFromPowerOfMultiplier(multiplier, power)
         override val isMajor: Boolean = true
     }

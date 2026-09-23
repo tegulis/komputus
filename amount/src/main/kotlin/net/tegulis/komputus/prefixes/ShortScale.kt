@@ -12,8 +12,7 @@ import java.math.BigDecimal
  * which is why the two are separate [PrefixGroup]s rather than one shared set: [ShortScale.BILLION] and
  * [LongScale.BILLION] are different prefixes, and should not be confused.
  *
- * The symbols are the words themselves rather than letters, because the letters are ambiguous across dimensions ("B"
- * would be a billion here but a byte elsewhere). An AmountFormatter can translate them per locale.
+ * The symbols are the words themselves rather than letters.
  *
  * Only non-negative powers are defined, so money never scales *down*: there are no millidollars, and aligning 0.5
  * dollars leaves it at [NONE].
@@ -26,10 +25,11 @@ object ShortScale : PrefixGroup() {
     override val defaultNotScalingPrefix: Prefix
         get() = NONE
 
-    sealed class ShortScalePrefix(override val symbol: String, override val power: Int) : Prefix() {
+    sealed class ShortScalePrefix(override val name: String, override val power: Int) : Prefix() {
         override val prefixGroup: PrefixGroup
             get() = ShortScale
 
+        override val symbol: String = name
         override val value: BigDecimal = valueFromPowerOfMultiplier(multiplier, power)
         override val isMajor: Boolean = true
     }

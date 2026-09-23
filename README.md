@@ -103,7 +103,7 @@ binary information does not, because bits or bytes is the caller's choice, not a
 Amount.ofSeconds(90).align()     // 1.5 min
 0.5.seconds().align()            // 500 ms
 Amount.ofMinutes(0.001).align()  // 60 ms
-2_500_000.money().align()        // 2.5 million¤ (uses the ShortScale.MILLION prefix, but currently ill-formatted)
+2_500_000.money().align()        // 2.5 million ¤
 ```
 
 #### Conversion
@@ -189,29 +189,22 @@ cancelling rates across units.
 
 #### Formatting
 
-**NOTE**: An AmountFormatter is coming, to replace `format()`.
-
-`format()` (and `toString()`) writes the value with the prefix and unit the amount currently carries. It does not align
-first, so call `align()` when you want the human-friendly form.
+`format()` (and `toString()`) hands the amount to an `AmountFormatter`, by default `AmountFormatter.DEFAULT`: default
+locale, symbols, and full alignment (human-friendly form).
 
 ```kotlin
 val disk = Amount.ofBytes(1, IEC.TEBI)
-disk.format()                           // 1 TiB
-disk.format(prefix = IEC.GIBI)          // 1,024 GiB
-disk.format(prefix = SI.GIGA)           // 1,099.51 GB
+disk.format()                                                       // 1 TiB
+disk.format(AmountFormatter.DEFAULT.copy(forcedPrefix = IEC.GIBI))  // 1,024 GiB
+disk.format(AmountFormatter.DEFAULT.copy(forcedPrefix = SI.GIGA))   // 1,099.51 GB
 ```
 
-The `prefix` parameter forces a prefix for display only, without creating a new amount and without asking the
-`prefixFilter`, so any prefix is honoured – even one from another group. To force the unit as well, convert first: a
-unit change is a real conversion, not a presentation.
+`DefaultAmountFormatter` is an immutable data class: `copy()` derives a variant, the way `withLocale()` does on a Java
+formatter. See the KDoc for details.
 
-The defaults live in `Amount.Companion` and can be changed:
-
-- `defaultNumberFormatProvider` provides a fresh `NumberFormat` for each call (number formats are not thread-safe).
-- `defaultPrefixAndUnitFormatString` is the pattern for value, prefix, and unit.
-
-When a unit has no symbol, its `name` or `pluralName` is used, chosen by the value as it is *displayed*: `1.0001` with
-two fraction digits displays as "1", so it reads "1 nibble".
+`Amount.defaultFormatter` is the one process-wide setting, behind `toString()`: set it once at start-up to localise
+everything. `AmountFormatter` is an interface, so a formatter with another layout (a compound "1 h 30 min", or a
+currency-styled "€1.50") can be a drop-in.
 
 See [ForcedFormatting.kt](src/test/kotlin/net/tegulis/komputus/demos/ForcedFormatting.kt) for a longer walk-through.
 
@@ -282,12 +275,11 @@ millidollars. Sub-unit precision is a formatting concern, not a scaling one.
 2_500_000.money(Currency.EUR).align().prefix   // ShortScale.MILLION
 ```
 
-Two limits are worth knowing before you hit them. **Exchange rates do not exist**: every currency converts to `MONEY`
+One limit is worth knowing before you hit it. **Exchange rates do not exist**: every currency converts to `MONEY`
 through the identity, so currencies compare and convert 1:1, and adding dollars to euros silently treats them as the
-same thing. Loading currency pairs is the planned fix. And **money does not format properly yet**: `format()` writes the
-prefix symbol next to the unit symbol, which is right for "1.5 kb" but gives "1.5 millionEUR" instead of
-"1.5 million EUR". A dedicated formatter will fix that, honour `CurrencyUnit.fractionDigits`, and translate the scale
-words per locale.
+same thing. Loading currency pairs is the planned fix.
+
+Formatting is also limited: `$100`, `€100` or `100 €` are currently not supported.
 
 ##### Shorthands for your favourite currency
 
@@ -410,10 +402,8 @@ the full algebra, the way to get it is a bridge to `javax.measure`, not a reimpl
 ## Not implemented yet
 
 - **Exchange rates.** Currencies convert 1:1 through the identity.
-- **A dedicated formatter.** `Amount.format()` cannot place a written prefix next to the value ("1.5 million EUR"),
-  translate it per locale, or honour the ISO 4217 fraction digits.
+- **Locale-specific currency symbols.** Money is written with its ISO code, never as "€1.50".
 - **`Period` conversion.** Only `Duration` bridges to an amount today.
-- **Automatic alignment.** `Amount.autoAlign` and `Amount.autoAlignPrefix` are placeholders and do nothing.
 - **More dimensions.** Length, mass, energy, and the rest are listed as TODOs in `Dimension.kt`.
 - **The ECS and the infrastructure model**, and with them the CRUD operations on bundles of entities.
 

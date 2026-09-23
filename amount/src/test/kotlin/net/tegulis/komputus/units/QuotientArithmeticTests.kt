@@ -2,12 +2,9 @@ package net.tegulis.komputus.units
 
 import com.google.common.truth.Truth.assertThat
 import java.math.BigDecimal
-import java.text.DecimalFormat
-import java.text.NumberFormat
 import java.time.Duration
 import java.time.LocalDate
 import java.time.Period
-import java.util.Locale
 import net.tegulis.komputus.amount.Amount
 import net.tegulis.komputus.prefixes.SI
 import net.tegulis.komputus.toAmount
@@ -17,9 +14,6 @@ import org.junit.jupiter.api.assertThrows
 
 class QuotientArithmeticTests {
 
-    private fun usNumberFormat(): NumberFormat =
-        DecimalFormat.getInstance(Locale.ROOT).apply { maximumFractionDigits = 2 }
-
     @Test
     fun `dividing 100 Mb by 3 hours creates a rate in megabits per hour`() {
         val rate = 100.Mb() / Amount.ofHours(3)
@@ -28,7 +22,7 @@ class QuotientArithmeticTests {
         assertThat(rate.magnitude).isEqualToIgnoringScale(BigDecimal("33333333.33"))
         // The MEGA prefix is carried over because bits admit major prefixes
         assertThat(rate.prefix).isSameInstanceAs(SI.MEGA)
-        assertThat(rate.format(usNumberFormat())).isEqualTo("33.33 Mb/h")
+        assertThat(rate.format()).isEqualTo("33.33 Mb/h")
     }
 
     @Test
@@ -56,7 +50,7 @@ class QuotientArithmeticTests {
         // 1 GiB / 30 is non-terminating, so three months come back a whisker short of 3 GiB but display as it
         assertThat(total.magnitude).isEqualToIgnoringScale(BigDecimal("3221225471.7"))
         assertThat(total).isNotEqualTo(3.GiB())
-        assertThat(total.format(usNumberFormat())).isEqualTo("3 GiB")
+        assertThat(total.format()).isEqualTo("3 GiB")
     }
 
     @Test
@@ -68,7 +62,7 @@ class QuotientArithmeticTests {
         val total = usage * firstQuarter
         // January's rate over January-March 2026 (90 days) is honestly less than 3 GiB
         assertThat(total < 3.GiB()).isTrue()
-        assertThat(total.format(usNumberFormat())).isEqualTo("2.9 GiB")
+        assertThat(total.format()).isEqualTo("2.9 GiB")
     }
 
     @Test
@@ -90,7 +84,7 @@ class QuotientArithmeticTests {
         // The IEC.GIBI prefix of the left operand is not admitted by Second, so the result resets into the SI group -
         // which is what lets a sub-second transfer time align down to milliseconds
         assertThat(transferTime.prefix).isSameInstanceAs(SI.NONE)
-        assertThat((1.MiB() / bandwidth).align().format(usNumberFormat())).isEqualTo("838.86 ms")
+        assertThat((1.MiB() / bandwidth).align().format()).isEqualTo("838.86 ms")
     }
 
     @Test
@@ -109,7 +103,7 @@ class QuotientArithmeticTests {
         val right = Amount.ofBytes(61440) / Amount.ofMinutes(1)
         val sum = left + right
         assertThat(sum).isEqualTo(2.KiB() / Amount.ofSeconds(1))
-        assertThat(sum.format(usNumberFormat())).isEqualTo("2 KiB/s")
+        assertThat(sum.format()).isEqualTo("2 KiB/s")
     }
 
     @Test

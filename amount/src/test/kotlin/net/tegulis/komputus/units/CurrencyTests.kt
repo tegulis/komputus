@@ -2,9 +2,6 @@ package net.tegulis.komputus.units
 
 import com.google.common.truth.Truth.assertThat
 import java.math.BigDecimal
-import java.text.DecimalFormat
-import java.text.NumberFormat
-import java.util.Locale
 import net.tegulis.komputus.amount.Amount
 import net.tegulis.komputus.prefixes.LongScale
 import net.tegulis.komputus.prefixes.ShortScale
@@ -14,16 +11,13 @@ import org.junit.jupiter.api.assertThrows
 
 class CurrencyTests {
 
-    private fun getUsNumberFormat(): NumberFormat =
-        DecimalFormat.getInstance(Locale.ROOT).apply { maximumFractionDigits = 2 }
-
     @Test
     fun `MONEY amounts use ShortScale by default`() {
         val five = 5.money()
         assertThat(five.unit).isSameInstanceAs(Currency.MONEY)
         assertThat(five.prefix.prefixGroup).isSameInstanceAs(ShortScale)
         assertThat(five.prefix).isSameInstanceAs(ShortScale.NONE)
-        assertThat(five.format(getUsNumberFormat())).isEqualTo("5 ¤")
+        assertThat(five.format()).isEqualTo("5 ¤")
     }
 
     @Test
@@ -32,10 +26,9 @@ class CurrencyTests {
         assertThat(2_500_000.money(EUR).align().prefix).isSameInstanceAs(ShortScale.MILLION)
         // In the short scale 10^9 is a billion
         assertThat(1_500_000_000.money(EUR).align().prefix).isSameInstanceAs(ShortScale.BILLION)
-        // TODO: format() concatenates the written prefix with the unit symbol, and money wants the multiplier next to
-        //   the value ("1.5 thousand EUR") - see the formatting TODO in Currency.kt
-        assertThat(1500.money(EUR).align().format(getUsNumberFormat())).isEqualTo("1.5 thousandEUR")
-        assertThat(1_500_000_000.money(EUR).align().format(getUsNumberFormat())).isEqualTo("1.5 billionEUR")
+        // The scale word sits next to the value, and the ISO 4217 fraction digits only apply to unscaled money
+        assertThat(1500.money(EUR).align().format()).isEqualTo("1.5 thousand EUR")
+        assertThat(1_500_000_000.money(EUR).align().format()).isEqualTo("1.5 billion EUR")
     }
 
     @Test
@@ -43,7 +36,7 @@ class CurrencyTests {
         // The very magnitude that is a billion in the short scale is a milliard in the long scale
         val milliard = Amount(1_500_000_000, LongScale.NONE, EUR).align()
         assertThat(milliard.prefix).isSameInstanceAs(LongScale.MILLIARD)
-        assertThat(milliard.format(getUsNumberFormat())).isEqualTo("1.5 milliardEUR")
+        assertThat(milliard.format()).isEqualTo("1.5 milliard EUR")
         // ...while a long scale billion is a thousand times bigger, at 10^12
         val billion = Amount(1_500_000_000_000L, LongScale.NONE, EUR).align()
         assertThat(billion.prefix).isSameInstanceAs(LongScale.BILLION)
@@ -58,7 +51,8 @@ class CurrencyTests {
         // Neither scale has sub-one prefixes, so there are no millidollars: cents stay a fraction of a dollar
         val cents = BigDecimal("0.5").money(EUR).align()
         assertThat(cents.prefix).isSameInstanceAs(ShortScale.NONE)
-        assertThat(cents.format(getUsNumberFormat())).isEqualTo("0.5 EUR")
+        // Unscaled money is written with its ISO 4217 fraction digits
+        assertThat(cents.format()).isEqualTo("0.5 EUR")
         assertThat(185.money(EUR).align().prefix).isSameInstanceAs(ShortScale.NONE)
     }
 
@@ -80,22 +74,23 @@ class CurrencyTests {
         val monthlyCost = price * 30.days() * storedBytes
         assertThat(monthlyCost.unit).isSameInstanceAs(Currency.MONEY)
         assertThat(monthlyCost.magnitude).isEqualToIgnoringScale(BigDecimal("185.22046464805306368"))
-        assertThat(monthlyCost.format(getUsNumberFormat())).isEqualTo("185.22 ¤")
+        assertThat(monthlyCost.format()).isEqualTo("185.22 ¤")
     }
 
     @Test
     fun `MONEY is the generic base unit`() {
         assertThat(Currency.baseUnit).isSameInstanceAs(Currency.MONEY)
-        assertThat(Currency.MONEY.amountOf(5, ShortScale.NONE).format(getUsNumberFormat())).isEqualTo("5 ¤")
+        assertThat(Currency.MONEY.amountOf(5, ShortScale.NONE).format()).isEqualTo("5 ¤")
     }
 
     @Test
-    fun `currencies format with their ISO codes`() {
+    fun `currencies format with their ISO codes and fraction digits`() {
         // TODO: refactor to parametric test
         for (currency in Currency.units) {
             if (currency == Currency.MONEY) continue
             val amount = Amount(5, unit = currency)
-            assertThat(amount.format(getUsNumberFormat())).isEqualTo("5 ${currency.code}")
+            val value = "5"
+            assertThat(amount.format()).isEqualTo("$value ${currency.code}")
         }
     }
 

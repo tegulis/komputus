@@ -21,6 +21,7 @@ import net.tegulis.komputus.toBigDecimalWithMathContext
  */
 abstract class Prefix {
     abstract val prefixGroup: PrefixGroup
+    abstract val name: String
     abstract val symbol: String
     abstract val power: Int
     abstract val value: BigDecimal
@@ -57,6 +58,7 @@ abstract class Prefix {
 
 object NotScalingPrefix : Prefix() {
     override val prefixGroup = NotScalingPrefixGroup
+    override val name = ""
     override val symbol = ""
     override val power = 0
     override val value: BigDecimal = BigDecimal.ONE

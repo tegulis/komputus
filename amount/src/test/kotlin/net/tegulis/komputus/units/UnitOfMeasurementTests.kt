@@ -74,7 +74,13 @@ class UnitOfMeasurementTests {
                     QuotientUnit(Currency.EUR, BinaryInformation.Byte),
                     QuotientUnit(QuotientUnit(Currency.EUR, BinaryInformation.Byte), Time.Day),
                 )
-            return (declaredUnits + quotientUnits).map { Arguments.of(it.name, it) }
+            return (declaredUnits + quotientUnits).map {
+                when {
+                    it is Currency.CurrencyUnit -> Arguments.of(it.code, it)
+                    it.name.isBlank() -> Arguments.of(it::class.simpleName, it)
+                    else -> Arguments.of(it.name, it)
+                }
+            }
         }
     }
 }

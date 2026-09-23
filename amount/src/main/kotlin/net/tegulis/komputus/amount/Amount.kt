@@ -3,11 +3,8 @@ package net.tegulis.komputus.amount
 import java.math.BigDecimal
 import java.math.MathContext
 import java.math.RoundingMode
-import java.text.DecimalFormat
-import java.text.NumberFormat
-import java.util.Locale
 import java.util.Objects
-import net.tegulis.komputus.amount.Amount.Companion.defaultNonTerminatingPrecision
+import net.tegulis.komputus.amount.formatter.AmountFormatter
 import net.tegulis.komputus.divideWithMathContext
 import net.tegulis.komputus.divideWithPrefix
 import net.tegulis.komputus.multiplyWithMathContext
@@ -31,7 +28,7 @@ import net.tegulis.komputus.units.UnitOfMeasurement
  * - [alignPrefix] to find the right [Prefix] to use for formatting the value
  * - [align] to optionally change the unit of measurement before aligning the [Prefix]
  * - [copy] to create a copy of the instance with modified values
- * - [format] (or [toString]) to format the amount using the currently set [Prefix] and [UnitOfMeasurement]
+ * - [format] (or [toString]) to format the amount with an [AmountFormatter]
  *
  * The most powerful part of this class is comparisons and conversions:
  * - [align] can change the unit of measurement to find the best in the same [Dimension]
@@ -116,9 +113,11 @@ class Amount : Comparable<Amount> {
      */
     fun getScaledValue(prefix: Prefix = this.prefix): BigDecimal = magnitude.divideWithPrefix(prefix)
 
-    /** Shorthand for [getScaledValue]. */
-    val scaledValue: BigDecimal
-        get() = getScaledValue()
+    /** Shorthand for [getScaledValue] with the [prefix]. */
+    val scaledValue: BigDecimal by lazy { getScaledValue() }
+
+    /** Shorthand for [align]. */
+    val aligned: Amount by lazy { unit.dimension.align(this) }
 
     /**
      * Align this amount using its dimension's alignment strategy by calling [Dimension.align].
@@ -126,7 +125,7 @@ class Amount : Comparable<Amount> {
      * [Dimension.align] may switch to a different unit (e.g. 3600 seconds align to 1 hour). Use [alignPrefix] to align
      * only the prefix within the current unit.
      */
-    fun align(): Amount = unit.dimension.align(this)
+    fun align(): Amount = aligned
 
     /**
      * Find the right prefix from a [net.tegulis.komputus.prefixes.PrefixGroup], that scales this amount above zero, but
@@ -152,49 +151,10 @@ class Amount : Comparable<Amount> {
         return if (prefix == groupPrefix) this else copy(prefix = groupPrefix)
     }
 
-    /**
-     * Return the full formatting of this amount using the set prefix and unit.
-     *
-     * When the unit has no symbol, [UnitOfMeasurement.name] or [UnitOfMeasurement.pluralName] is chosen based on the
-     * *displayed* value: the singular form is used exactly when the value formats to the same string as one does (e.g.
-     * `1.0001` with two fraction digits displays as `1` and is singular).
-     *
-     * Passing [prefix] overrides the prefix used for scaling and display without creating a new instance, so a value
-     * can be forced into a specific prefix (e.g. format bits as kilobits with `format(prefix = SI.KILO)`). The override
-     * is not filtered by [UnitOfMeasurement.prefixFilter]: any prefix is honoured.
-     *
-     * @param numberFormat The [DecimalFormat] used to format the amount.
-     * @param prefixAndUnitFormatString The [String.format] used to format the amount, prefix, and unit.
-     * @param prefix The prefix to scale and display the value with; defaults to this amount's [prefix].
-     * @return The full formatting of this amount without aligning the prefix first.
-     *
-     * TODO: ability to change if unit symbol or name is used
-     */
-    fun format(
-        numberFormat: NumberFormat = defaultNumberFormatProvider(),
-        prefixAndUnitFormatString: String = defaultPrefixAndUnitFormatString,
-        prefix: Prefix = this.prefix,
-    ): String {
-        val scaledValue = getScaledValue(prefix)
-        val formattedValue = numberFormat.format(scaledValue)
-        val unitSymbolPadding = if (prefix.symbol.isNotBlank()) " " else ""
-        var unitSymbol = unit.symbol
-        if (unitSymbol.isBlank() && unit.name.isNotBlank() && unit.pluralName.isNotBlank()) {
-            val displaysAsOne = numberFormat.format(scaledValue.abs()) == numberFormat.format(BigDecimal.ONE)
-            unitSymbol = unitSymbolPadding + if (displaysAsOne) unit.name else unit.pluralName
-        }
-        if (unitSymbol.isBlank() && unit.name.isNotBlank() && unit.pluralName.isBlank()) {
-            unitSymbol = unitSymbolPadding + unit.name
-        }
-        return prefixAndUnitFormatString.format(formattedValue, prefix.symbol, unitSymbol)
-    }
+    /** Format this amount with [formatter], by default [defaultFormatter]. */
+    fun format(formatter: AmountFormatter = defaultFormatter): String = formatter.format(this)
 
-    /**
-     * Return the full formatting of this amount using the prefix, without aligning it. Use [alignPrefix] + [format] to
-     * align.
-     *
-     * Equivalent to [format] with default arguments.
-     */
+    /** Equivalent to [format] with [defaultFormatter]. */
     override fun toString(): String = format()
 
     /**
@@ -279,13 +239,8 @@ class Amount : Comparable<Amount> {
 
     companion object {
 
-        // TODO: automatic alignment
-        var autoAlignPrefix: Boolean = false
-        var autoAlign: Boolean = false
-            set(value) {
-                field = value
-                if (value) autoAlignPrefix = true
-            }
+        /** Process-wide formatter behind [toString] and the no-argument [format]. */
+        @Volatile var defaultFormatter: AmountFormatter = AmountFormatter.DEFAULT
 
         // TODO: make this val and allow changing the precision per instance / arithmetic
         var defaultPrecision: Int = 0
@@ -293,25 +248,6 @@ class Amount : Comparable<Amount> {
         var defaultRoundingMode: RoundingMode = RoundingMode.HALF_DOWN
         val defaultMathContext: MathContext
             get() = MathContext(defaultPrecision, defaultRoundingMode)
-
-        // TODO: make this a configuration data class?
-        /**
-         * Provides a new instance of [NumberFormat] for default formatting.
-         *
-         * The default uses [Locale.ROOT] so formatting does not depend on the machine's locale: it always groups with a
-         * comma and uses a dot for the decimal point. Replace this provider to format for a specific locale.
-         *
-         * See the
-         * [Synchronization section in NumberFormat](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/text/NumberFormat.html#synchronization):
-         * > Number formats are generally not synchronized. It is recommended to create separate format instances for
-         * > each thread. If multiple threads access a format concurrently, it must be synchronized externally.
-         *
-         * See [NumberFormat] and [DecimalFormat].
-         */
-        var defaultNumberFormatProvider: () -> NumberFormat = {
-            DecimalFormat.getInstance(Locale.ROOT).apply { maximumFractionDigits = 2 }
-        }
-        var defaultPrefixAndUnitFormatString: String = $$"%1$s %2$s%3$s"
         /*
             fun sumForEntities(entityStream: Stream<out JEntity>, componentClass: Class<out Component>): BigDecimal {
                 return entityStream.map { entity -> getForEntity(entity, componentClass) }

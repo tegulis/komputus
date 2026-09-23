@@ -21,12 +21,6 @@ import net.tegulis.komputus.units.Currency.CurrencyUnit
  *
  * TODO: All currencies have been imported from ISO 4217. A thorough review of the list is needed to ensure all
  *   currencies are correct and have proper naming and symbols.
- * TODO: Formatting a scaled money amount is not right yet: [Amount.format] concatenates the prefix symbol with the unit
- *   symbol, which is correct for every other dimension ("1.5 kb") but yields "1.5 millionUSD" for a written-out prefix.
- *   Money also wants the multiplier next to the *value* ("1.5 million USD"). Fix this when Amount.format() is replaced
- *   by an AmountFormatter (and possibly a CurrencyFormatter, which could also translate the prefix words per locale - a
- *   Hungarian reader expects "milliárd", not "milliard" - and honour [CurrencyUnit.fractionDigits] and locale-specific
- *   currency symbols).
  */
 object Currency : Dimension {
     override val units: List<CurrencyUnit> by lazy {
@@ -216,10 +210,11 @@ object Currency : Dimension {
 
     sealed class CurrencyUnit(
         val code: String,
-        val numericCode: String,
+        @Suppress("unused") val numericCode: String,
         override val name: String,
         override val pluralName: String,
         symbol: String? = null,
+        /** TODO: Maybe extend this to [UnitOfMeasurement]? */
         val fractionDigits: Int? = null,
     ) : UnitOfMeasurement {
         override val symbol: String = symbol ?: code
